@@ -1,1 +1,0 @@
-/workspaces/ur10_final_project/devel/.private/control_core_msgs/share/control_core_msgs/cmake/control_core_msgsConfig-version.cmake

@@ -1,1 +1,0 @@
-/workspaces/ur10_final_project/devel/.private/object_msgs/include/object_msgs/AddMovingObjects.h

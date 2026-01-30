@@ -1,1 +1,0 @@
-set(ORDERED_PATHS "/workspaces/ur10_final_project/devel/.private/control_core/lib;/workspaces/ur10_final_project/devel/.private/ur_model/lib;/opt/ros/noetic/lib")

@@ -1,8 +1,0 @@
-prefix=/workspaces/ur10_final_project/devel/.private/ur_model
-
-Name: ur_model
-Description: Description of ur_model
-Version: 0.0.0
-Cflags: -I/workspaces/ur10_final_project/src/ur_model/include -I/usr/include/eigen3
-Libs: -L${prefix}/lib -lur_model
-Requires: control_core roscpp tf

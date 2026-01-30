@@ -1,1 +1,0 @@
-/workspaces/ur10_final_project/devel/.private/control_core_msgs/share/gennodejs/ros/control_core_msgs/msg/CartesianStateTrajectory.js

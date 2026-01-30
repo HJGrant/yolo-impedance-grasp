@@ -1,8 +1,0 @@
-prefix=/workspaces/ur10_final_project/devel/.private/control_core_msgs
-
-Name: control_core_msgs
-Description: Description of control_core_msgs
-Version: 0.0.0
-Cflags: -I/workspaces/ur10_final_project/devel/.private/control_core_msgs/include
-Libs: -L${prefix}/lib 
-Requires: roscpp rospy std_msgs geometry_msgs message_runtime

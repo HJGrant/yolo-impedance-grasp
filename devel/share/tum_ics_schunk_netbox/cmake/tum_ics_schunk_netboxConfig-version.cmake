@@ -1,1 +1,0 @@
-/workspaces/ur10_final_project/devel/.private/tum_ics_schunk_netbox/share/tum_ics_schunk_netbox/cmake/tum_ics_schunk_netboxConfig-version.cmake

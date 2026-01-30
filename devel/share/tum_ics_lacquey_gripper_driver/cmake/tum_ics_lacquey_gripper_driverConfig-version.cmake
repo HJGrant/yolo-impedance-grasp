@@ -1,1 +1,0 @@
-/workspaces/ur10_final_project/devel/.private/tum_ics_lacquey_gripper_driver/share/tum_ics_lacquey_gripper_driver/cmake/tum_ics_lacquey_gripper_driverConfig-version.cmake

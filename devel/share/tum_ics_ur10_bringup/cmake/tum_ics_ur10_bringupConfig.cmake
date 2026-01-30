@@ -1,1 +1,0 @@
-/workspaces/ur10_final_project/devel/.private/tum_ics_ur10_bringup/share/tum_ics_ur10_bringup/cmake/tum_ics_ur10_bringupConfig.cmake

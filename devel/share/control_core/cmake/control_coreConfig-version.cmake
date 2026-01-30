@@ -1,1 +1,0 @@
-/workspaces/ur10_final_project/devel/.private/control_core/share/control_core/cmake/control_coreConfig-version.cmake

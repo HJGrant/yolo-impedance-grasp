@@ -1,1 +1,0 @@
-/workspaces/ur10_final_project/devel/.private/object_msgs/share/gennodejs/ros/object_msgs/srv/_index.js

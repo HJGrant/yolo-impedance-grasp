@@ -1,1 +1,0 @@
-/workspaces/ur10_final_project/devel/.private/object_msgs/lib/python3/dist-packages/object_msgs/srv/__init__.py
