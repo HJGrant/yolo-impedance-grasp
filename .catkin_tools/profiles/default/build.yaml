@@ -6,7 +6,7 @@ cmake_args:
 - -DTUM_ICS_USE_QT5=1
 devel_layout: linked
 devel_space: devel
-extend_path: null
+extend_path: /opt/ros/noetic
 extends: null
 install: false
 install_space: install
@@ -17,6 +17,7 @@ licenses:
 log_space: logs
 maintainers: []
 make_args: []
+needs_force: false
 source_space: src
 use_env_cache: false
 use_internal_make_jobserver: true

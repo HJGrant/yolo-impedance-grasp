@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/python,linux,ros
-# Edit at https://www.toptal.com/developers/gitignore?templates=python,linux,ros
+# Created by https://www.toptal.com/developers/gitignore/api/python,ros,linux
+# Edit at https://www.toptal.com/developers/gitignore?templates=python,ros,linux
 
 ### Linux ###
 *~
@@ -238,4 +238,4 @@ qtcreator-*
 # Catkin custom files
 CATKIN_IGNORE
 
-# End of https://www.toptal.com/developers/gitignore/api/python,linux,ros
+# End of https://www.toptal.com/developers/gitignore/api/python,ros,linux

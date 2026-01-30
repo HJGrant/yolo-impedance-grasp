@@ -1,0 +1,4 @@
+robot_descriptions/prr_robot/prr_robot_bringup
+/workspaces/ur10_ws/devel/.private/prr_robot_bringup/share/prr_robot_bringup/cmake/prr_robot_bringupConfig-version.cmake /workspaces/ur10_ws/devel/share/prr_robot_bringup/cmake/prr_robot_bringupConfig-version.cmake
+/workspaces/ur10_ws/devel/.private/prr_robot_bringup/share/prr_robot_bringup/cmake/prr_robot_bringupConfig.cmake /workspaces/ur10_ws/devel/share/prr_robot_bringup/cmake/prr_robot_bringupConfig.cmake
+/workspaces/ur10_ws/devel/.private/prr_robot_bringup/lib/pkgconfig/prr_robot_bringup.pc /workspaces/ur10_ws/devel/lib/pkgconfig/prr_robot_bringup.pc

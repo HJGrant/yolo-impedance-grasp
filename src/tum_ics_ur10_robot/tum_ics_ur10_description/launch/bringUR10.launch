@@ -8,7 +8,7 @@
   
   <node name="joint_state_publisher_ur10" pkg="joint_state_publisher" type="joint_state_publisher" >
     <param name="use_gui" value="false"/>
-		<!--remap from="/joint_states" to="/joint_cmd"/-->
+		<!-- <remap from="/joint_states" to="/joint_cmd"/> -->
     <rosparam param="source_list">[ur10_arm_joint_states]</rosparam>
   </node>
   <node name="robot_state_publisher_ur10" pkg="robot_state_publisher" type="robot_state_publisher" />

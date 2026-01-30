@@ -1,0 +1,4 @@
+robot_descriptions/rppr_robot/rppr_robot_description
+/workspaces/ur10_ws/devel/.private/rppr_robot_description/share/rppr_robot_description/cmake/rppr_robot_descriptionConfig.cmake /workspaces/ur10_ws/devel/share/rppr_robot_description/cmake/rppr_robot_descriptionConfig.cmake
+/workspaces/ur10_ws/devel/.private/rppr_robot_description/share/rppr_robot_description/cmake/rppr_robot_descriptionConfig-version.cmake /workspaces/ur10_ws/devel/share/rppr_robot_description/cmake/rppr_robot_descriptionConfig-version.cmake
+/workspaces/ur10_ws/devel/.private/rppr_robot_description/lib/pkgconfig/rppr_robot_description.pc /workspaces/ur10_ws/devel/lib/pkgconfig/rppr_robot_description.pc

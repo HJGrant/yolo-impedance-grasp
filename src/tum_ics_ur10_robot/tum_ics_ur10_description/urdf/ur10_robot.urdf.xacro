@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro"
        name="ur10" >
+  <xacro:arg name="prefix" default=""/>
+  <xacro:arg name="limited" default="false"/>
 
   <!-- common stuff -->
   <xacro:include filename="$(find tum_ics_ur10_description)/urdf/gazebo.urdf.xacro" />

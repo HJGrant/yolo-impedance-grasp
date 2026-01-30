@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   tf_conversions
+  control_core
+  ur_model
 )
 
 ##############################################################################
@@ -80,6 +82,8 @@ file(GLOB_RECURSE MY_CTRL_INC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLIN
 
 add_library(my_robot_control_lli
    src/simple_effort_controller.cpp
+   src/jointspace_controller.cpp
+   src/cartesianspace_controller.cpp
    ${MY_CTRL_INC}
 )
 target_link_libraries(my_robot_control_lli
@@ -104,6 +108,8 @@ add_dependencies(my_robot_control_lli
 
 set(APP_TARGETS
   simple_effort_controller_node
+  jointspace_controller_node
+  cartesianspace_controller_node
 )
 
 foreach(target ${APP_TARGETS})

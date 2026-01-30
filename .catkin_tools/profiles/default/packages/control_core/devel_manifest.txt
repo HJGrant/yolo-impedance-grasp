@@ -1,0 +1,8 @@
+utilities/control_core
+/workspaces/ur10_final_project/devel/.private/control_core/lib/libcontrol_core.so /workspaces/ur10_final_project/devel/lib/libcontrol_core.so
+/workspaces/ur10_final_project/devel/.private/control_core/lib/control_core/spline /workspaces/ur10_final_project/devel/lib/control_core/spline
+/workspaces/ur10_final_project/devel/.private/control_core/lib/control_core/polynomial /workspaces/ur10_final_project/devel/lib/control_core/polynomial
+/workspaces/ur10_final_project/devel/.private/control_core/lib/control_core/geometry /workspaces/ur10_final_project/devel/lib/control_core/geometry
+/workspaces/ur10_final_project/devel/.private/control_core/lib/pkgconfig/control_core.pc /workspaces/ur10_final_project/devel/lib/pkgconfig/control_core.pc
+/workspaces/ur10_final_project/devel/.private/control_core/share/control_core/cmake/control_coreConfig.cmake /workspaces/ur10_final_project/devel/share/control_core/cmake/control_coreConfig.cmake
+/workspaces/ur10_final_project/devel/.private/control_core/share/control_core/cmake/control_coreConfig-version.cmake /workspaces/ur10_final_project/devel/share/control_core/cmake/control_coreConfig-version.cmake

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <!-- ur10 settings -->
+  <arg name="CONFIG_FILE_PATH" default="$(find tum_ics_ur10_controller_tutorial)/launch/configs/configUR10.ini"/>
+
+  <node name="relay_ursa_to_joint_states" pkg="topic_tools" type="relay"
+        args="/ursa_joint_states /joint_states" />
+
+  <!-- the controller -->
+  <node name="cartesianspace_controller" pkg="tum_ics_ur10_controller_tutorial" type="cartesianspace_controller_node" args="$(arg CONFIG_FILE_PATH)" output="screen">
+
+    <!-- internal parameter --> 
+    <rosparam file="$(find tum_ics_ur_robot_controllers)/launch/configs/pidInt.yaml" command="load" />
+
+    <!-- controller parameter --> 
+    <rosparam file="$(find tum_ics_ur10_controller_tutorial)/launch/configs/cartesianspace_controller.yaml" command="load" />
+    
+  </node>
+
+</launch>
