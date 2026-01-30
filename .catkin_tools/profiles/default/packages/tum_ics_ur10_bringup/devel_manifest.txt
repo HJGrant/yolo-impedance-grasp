@@ -1,0 +1,4 @@
+tum_ics_ur10_robot/tum_ics_ur10_bringup
+/workspaces/ur10_ws/devel/.private/tum_ics_ur10_bringup/share/tum_ics_ur10_bringup/cmake/tum_ics_ur10_bringupConfig-version.cmake /workspaces/ur10_ws/devel/share/tum_ics_ur10_bringup/cmake/tum_ics_ur10_bringupConfig-version.cmake
+/workspaces/ur10_ws/devel/.private/tum_ics_ur10_bringup/share/tum_ics_ur10_bringup/cmake/tum_ics_ur10_bringupConfig.cmake /workspaces/ur10_ws/devel/share/tum_ics_ur10_bringup/cmake/tum_ics_ur10_bringupConfig.cmake
+/workspaces/ur10_ws/devel/.private/tum_ics_ur10_bringup/lib/pkgconfig/tum_ics_ur10_bringup.pc /workspaces/ur10_ws/devel/lib/pkgconfig/tum_ics_ur10_bringup.pc

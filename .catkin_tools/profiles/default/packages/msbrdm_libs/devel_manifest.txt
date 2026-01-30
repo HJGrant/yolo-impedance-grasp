@@ -1,0 +1,5 @@
+msbrdm_libs
+/workspaces/ur10_ws/devel/.private/msbrdm_libs/share/msbrdm_libs/cmake/msbrdm_libsConfig.cmake /workspaces/ur10_ws/devel/share/msbrdm_libs/cmake/msbrdm_libsConfig.cmake
+/workspaces/ur10_ws/devel/.private/msbrdm_libs/share/msbrdm_libs/cmake/msbrdm_libsConfig-version.cmake /workspaces/ur10_ws/devel/share/msbrdm_libs/cmake/msbrdm_libsConfig-version.cmake
+/workspaces/ur10_ws/devel/.private/msbrdm_libs/lib/pkgconfig/msbrdm_libs.pc /workspaces/ur10_ws/devel/lib/pkgconfig/msbrdm_libs.pc
+/workspaces/ur10_ws/devel/.private/msbrdm_libs/lib/python3/dist-packages/msbrdm_libs/__init__.py /workspaces/ur10_ws/devel/lib/python3/dist-packages/msbrdm_libs/__init__.py
