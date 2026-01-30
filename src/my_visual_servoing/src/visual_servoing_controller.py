@@ -3,13 +3,17 @@
 import rospy
 import cv2
 import numpy as np
-from vision_msgs.msg import Detection2DArray
+from vision_msgs.msg import Detection2DArray, CameraInfo
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import Float32
+from std_msgs.msg import Float32MultiArray
 
 class JointIBVS:
-    def __init__(self):
+    def __init__(self, model):
         rospy.init_node('joint_ibvs_node')
+        
+        self.model = model
 
         # --- Control Constants ---
         self.lmbda = 0.6
@@ -30,7 +34,10 @@ class JointIBVS:
         self.current_u = None
         self.current_v = None
 
-        rospy.Timer(rospy.Duration(0.05), self.control_loop)
+        self.theta = self.model.theta
+        self.theta_num = np.asarray(self.theta.subs(self.model.params_list))
+
+        #rospy.Timer(rospy.Duration(0.05), self.control_loop)
 
     def info_cb(self, msg):
         self.image_height = msg.height 
@@ -48,25 +55,25 @@ class JointIBVS:
         self.cy = intrinsics[5]
 
     def depth_callback(self, msg):
-    # 1. Convert ROS image to NumPy
-    # '16UC1' is common for depth (mm), '32FC1' is for meters
-    raw_depth = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+        # 1. Convert ROS image to NumPy
+        # '16UC1' is common for depth (mm), '32FC1' is for meters
+        raw_depth = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
 
-    # 2. Handle NaNs/Infs if using 32FC1
-    if raw_depth.dtype == np.float32:
-        raw_depth = np.nan_to_num(raw_depth, nan=0.0, posinf=0.0, neginf=0.0)
+        # 2. Handle NaNs/Infs if using 32FC1
+        if raw_depth.dtype == np.float32:
+            raw_depth = np.nan_to_num(raw_depth, nan=0.0, posinf=0.0, neginf=0.0)
 
-    # 3. Apply Median Filter
-    # kernel size 5 is a good balance. It must be an odd integer.
-    # This fills in small holes and removes outliers.
-    filtered_depth = cv2.medianBlur(raw_depth, 5)
+        # 3. Apply Median Filter
+        # kernel size 5 is a good balance. It must be an odd integer.
+        # This fills in small holes and removes outliers.
+        filtered_depth = cv2.medianBlur(raw_depth, 5)
 
-    # 4. (Optional) Hole Filling / Dilation
-    # If you still have black holes (0s), a small dilation can help
-    mask = (filtered_depth == 0).astype(np.uint8)
-    filtered_depth = cv2.inpaint(filtered_depth, mask, 3, cv2.INPAINT_TELEA)
+        # 4. (Optional) Hole Filling / Dilation
+        # If you still have black holes (0s), a small dilation can help
+        mask = (filtered_depth == 0).astype(np.uint8)
+        filtered_depth = cv2.inpaint(filtered_depth, mask, 3, cv2.INPAINT_TELEA)
 
-    self.latest_depth_map = filtered_depth
+        self.latest_depth_map = filtered_depth
 
     def detection_callback(self, msg):
         if msg.detections and self.latest_depth_map is not None:
@@ -122,20 +129,40 @@ class JointIBVS:
             ])
             L_stacked.append(L_i)
         return np.vstack(L_stacked)
+    
+    def update(self, joint_states: np.ndarray, t: rospy.Time, dt: rospy.Duration) -> np.ndarray:
+        """Update the controller
 
-    def get_robot_jacobian(self):
-        """
-        Placeholder for the Robot's Geometric Jacobian.
-        In a real app, you'd use URDF/KDL to compute this based on current joint angles.
-        Maps Joint Vel (q_dot) -> Camera Vel (v, w)
-        """
-        # Example: 6-DOF Robot Jacobian (6 rows, N joints)
-        return np.eye(6) 
+        Args:
+            joint_states (np.ndarray): joint states from robot feedback [q, qdot, qddot] (3 x n)
+            t (rospy.Time): current ros time
+            dt (rospy.Duration): time interval
 
-    def control_loop(self, event):
-        def control_loop(self, event):
+        Returns:
+            np.ndarray: torque commands (n x 1)
+        """
+        # Calculate elapsed time
+        #t_elapsed = t.to_sec() - self.t_start.to_sec()
+
+        # TODO: update trajectory
+        joint_states_des = self.trajectory(self.state, t)
+
+        # TODO: update controller and return torque commands
+        tau = np.zeros((self.model.nq, 1))
+        tau = self.error_space_controller(joint_states, joint_states_des, dt=dt)
+
+        return tau
+
+    def visual_servoing_controller(self, joint_states: np.ndarray, joint_states_des: np.ndarray, dt: rospy.Duration) -> np.ndarray:
+
         if self.current_features is None or self.current_depths is None:
             return
+        
+        q = joint_states[0, :].reshape(-1, 1)
+        qdot = joint_states[1, :].reshape(-1, 1)
+        qddot = joint_states[2, :].reshape(-1, 1)
+
+        tau = np.zeros((self.model.nq, 1))
 
         # 1. Image Error (8x1)
         error = self.current_features - self.s_star 
@@ -146,18 +173,77 @@ class JointIBVS:
         
         # 3. Robot Jacobian and Control Law
         # TODO: Get Robot Jacobain
-        J_robot = self.get_robot_jacobian()
+        J_robot = self.model.J_ee_w_fn(*q)
         J_total = np.matmul(L, J_robot)
         
         # Compute joint velocities
-        q_dot = -self.lmbda * np.matmul(np.linalg.pinv(J_total), error)
+        qdot_r = -self.lmbda * np.matmul(np.linalg.pinv(J_total), error)
 
-        # 4. Publish
+        q_r = qdot * dt
 
+        self.Sr = qdot - qdot_r
+
+        Yr_evaluated = self.model.Yr_fn(q.flatten(), 
+                                        qdot.flatten(), 
+                                        self.qdot_r.flatten(), 
+                                        self.qddot_r.flatten())
+        
+        Yr_evaluated_np = np.asarray(Yr_evaluated)
+
+        tau = -self.Kd @ self.Sr + (Yr_evaluated_np @ self.theta_num)
+        tau = np.array(tau).astype(np.float64).reshape(3, 1)
+
+        # TODO: Calculate Lyapunov function and publish
+        M_mat = self.model.M_fn(*q.flatten())
+        V = 0.5 * self.Sr.T @ M_mat @ self.Sr # + 0.5 * delta_q.T @ V_Kp @ delta_q
+        V_msg = Float32()
+        V_msg.data = float(V.item())
+        self.lyapunov_pub.publish(V_msg)
+
+        # TODO: Calculate steady state error and publish
+        delta_q = q - q_r
+        err = delta_q
+        steady_state_err_msg = Float32MultiArray()
+        steady_state_err_msg.data = err.flatten().tolist()
+        self.steady_state_error_pub.publish(steady_state_err_msg)
+
+
+
+def main():
+
+    model = UR10Model3DOF()
+    robot = UR10Robot3DOF(model, q_init=np.array([0, 0, 0.01]))
+    #controller = UR10Controller(model, q_init=np.array([0, 0, 0.01]))
+    visual_controller = JointIBVS(model)
+
+    rate = rospy.Rate(100)
+    t = rospy.Time.now()
+    t_prev = t
+
+    while not rospy.is_shutdown():
+        t = rospy.Time.now()
+        dt = t - t_prev
+        t_prev = t
+        
+        # TODO: Get current joint states from robot
+        joint_states = robot.get_joint_states()
+
+        # TODO: Update controller with joint states feedback
+        tau = visual_controller.update(joint_states, t, dt)
+
+        # TODO: Update robot dynamics with computed torque commands
+        #tau = np.zeros((model.nq, 1))
+        robot.update_dynamics(tau, dt)
+
+        # TODO: publich joint states and TF frames from robot class
+        robot.update_kinematics()
+        robot.publish_joint_states()
+
+        rate.sleep()
 
 if __name__ == '__main__':
     try:
-        JointIBVS()
-        rospy.spin()
+        rospy.init_node('ur10_visual_control_node')
+        main()
     except rospy.ROSInterruptException:
         pass
