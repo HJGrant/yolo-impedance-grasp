@@ -1,0 +1,1 @@
+/workspaces/ur10_final_project/devel/.private/tum_ics_schunk_netbox/lib/pkgconfig/tum_ics_schunk_netbox.pc

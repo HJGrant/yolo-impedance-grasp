@@ -1,0 +1,12 @@
+Symlinking /workspaces/ur10_final_project/devel/lib/pkgconfig/tum_ics_ur10_description.pc
+Symlinking /workspaces/ur10_final_project/devel/share/tum_ics_ur10_description/cmake/tum_ics_ur10_descriptionConfig.cmake
+Symlinking /workspaces/ur10_final_project/devel/share/tum_ics_ur10_description/cmake/tum_ics_ur10_descriptionConfig-version.cmake
+Cleaning: (/workspaces/ur10_ws/devel/.private/tum_ics_ur10_description/share/tum_ics_ur10_description/cmake/tum_ics_ur10_descriptionConfig.cmake, /workspaces/ur10_ws/devel/share/tum_ics_ur10_description/cmake/tum_ics_ur10_descriptionConfig.cmake)
+Cleaning: (/workspaces/ur10_ws/devel/.private/tum_ics_ur10_description/share/tum_ics_ur10_description/cmake/tum_ics_ur10_descriptionConfig-version.cmake, /workspaces/ur10_ws/devel/share/tum_ics_ur10_description/cmake/tum_ics_ur10_descriptionConfig-version.cmake)
+Cleaning: (/workspaces/ur10_ws/devel/.private/tum_ics_ur10_description/lib/pkgconfig/tum_ics_ur10_description.pc, /workspaces/ur10_ws/devel/lib/pkgconfig/tum_ics_ur10_description.pc)
+Unlinking: /workspaces/ur10_ws/devel/share/tum_ics_ur10_description/cmake/tum_ics_ur10_descriptionConfig.cmake
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/share/tum_ics_ur10_description/cmake/tum_ics_ur10_descriptionConfig-version.cmake
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/lib/pkgconfig/tum_ics_ur10_description.pc
+Already unlinked: {}

@@ -1,0 +1,1 @@
+/workspaces/ur10_final_project/devel/.private/control_core_msgs/lib/python3/dist-packages/control_core_msgs/msg/_AngularStateStamped.py

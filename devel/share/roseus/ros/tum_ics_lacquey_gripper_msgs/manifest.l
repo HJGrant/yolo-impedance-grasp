@@ -1,0 +1,1 @@
+/workspaces/ur10_final_project/devel/.private/tum_ics_lacquey_gripper_msgs/share/roseus/ros/tum_ics_lacquey_gripper_msgs/manifest.l

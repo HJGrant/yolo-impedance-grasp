@@ -1,0 +1,8 @@
+prefix=/workspaces/ur10_final_project/devel/.private/visual_perception
+
+Name: visual_perception
+Description: Description of visual_perception
+Version: 0.0.0
+Cflags: -I/workspaces/ur10_final_project/src/utilities/visual_perception/include
+Libs: -L${prefix}/lib 
+Requires: cv_bridge geometry_msgs image_geometry image_transport roscpp sensor_msgs object_msgs tf

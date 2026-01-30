@@ -1,0 +1,1 @@
+/workspaces/ur10_final_project/devel/.private/visual_perception/share/visual_perception/cmake/visual_perceptionConfig.cmake

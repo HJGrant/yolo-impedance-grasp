@@ -1,0 +1,16 @@
+Symlinking /workspaces/ur10_final_project/devel/lib/pkgconfig/visual_perception.pc
+Symlinking /workspaces/ur10_final_project/devel/lib/visual_perception/visual_perception_node
+Symlinking /workspaces/ur10_final_project/devel/share/visual_perception/cmake/visual_perceptionConfig-version.cmake
+Symlinking /workspaces/ur10_final_project/devel/share/visual_perception/cmake/visual_perceptionConfig.cmake
+Cleaning: (/workspaces/ur10_ws/devel/.private/visual_perception/share/visual_perception/cmake/visual_perceptionConfig.cmake, /workspaces/ur10_ws/devel/share/visual_perception/cmake/visual_perceptionConfig.cmake)
+Cleaning: (/workspaces/ur10_ws/devel/.private/visual_perception/share/visual_perception/cmake/visual_perceptionConfig-version.cmake, /workspaces/ur10_ws/devel/share/visual_perception/cmake/visual_perceptionConfig-version.cmake)
+Cleaning: (/workspaces/ur10_ws/devel/.private/visual_perception/lib/pkgconfig/visual_perception.pc, /workspaces/ur10_ws/devel/lib/pkgconfig/visual_perception.pc)
+Cleaning: (/workspaces/ur10_ws/devel/.private/visual_perception/lib/visual_perception/visual_perception_node, /workspaces/ur10_ws/devel/lib/visual_perception/visual_perception_node)
+Unlinking: /workspaces/ur10_ws/devel/share/visual_perception/cmake/visual_perceptionConfig.cmake
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/share/visual_perception/cmake/visual_perceptionConfig-version.cmake
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/lib/pkgconfig/visual_perception.pc
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/lib/visual_perception/visual_perception_node
+Already unlinked: {}

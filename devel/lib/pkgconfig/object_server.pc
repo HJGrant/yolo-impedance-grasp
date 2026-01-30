@@ -1,0 +1,1 @@
+/workspaces/ur10_final_project/devel/.private/object_server/lib/pkgconfig/object_server.pc

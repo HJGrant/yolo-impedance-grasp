@@ -1,0 +1,52 @@
+Symlinking /workspaces/ur10_final_project/devel/./env.sh
+Symlinking /workspaces/ur10_final_project/devel/./setup.sh
+Symlinking /workspaces/ur10_final_project/devel/./setup.fish
+Symlinking /workspaces/ur10_final_project/devel/./local_setup.fish
+Symlinking /workspaces/ur10_final_project/devel/./local_setup.sh
+Symlinking /workspaces/ur10_final_project/devel/./local_setup.bash
+Symlinking /workspaces/ur10_final_project/devel/./_setup_util.py
+Symlinking /workspaces/ur10_final_project/devel/./setup.bash
+Symlinking /workspaces/ur10_final_project/devel/./setup.zsh
+Symlinking /workspaces/ur10_final_project/devel/./local_setup.zsh
+Symlinking /workspaces/ur10_final_project/devel/lib/pkgconfig/catkin_tools_prebuild.pc
+Symlinking /workspaces/ur10_final_project/devel/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig.cmake
+Symlinking /workspaces/ur10_final_project/devel/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig-version.cmake
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/setup.fish, /workspaces/ur10_ws/devel/./setup.fish)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/env.sh, /workspaces/ur10_ws/devel/./env.sh)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/local_setup.sh, /workspaces/ur10_ws/devel/./local_setup.sh)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/setup.zsh, /workspaces/ur10_ws/devel/./setup.zsh)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/local_setup.zsh, /workspaces/ur10_ws/devel/./local_setup.zsh)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/local_setup.fish, /workspaces/ur10_ws/devel/./local_setup.fish)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/local_setup.bash, /workspaces/ur10_ws/devel/./local_setup.bash)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/setup.bash, /workspaces/ur10_ws/devel/./setup.bash)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/_setup_util.py, /workspaces/ur10_ws/devel/./_setup_util.py)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/setup.sh, /workspaces/ur10_ws/devel/./setup.sh)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig-version.cmake, /workspaces/ur10_ws/devel/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig-version.cmake)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig.cmake, /workspaces/ur10_ws/devel/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig.cmake)
+Cleaning: (/workspaces/ur10_ws/devel/.private/catkin_tools_prebuild/lib/pkgconfig/catkin_tools_prebuild.pc, /workspaces/ur10_ws/devel/lib/pkgconfig/catkin_tools_prebuild.pc)
+Unlinking: /workspaces/ur10_ws/devel/./setup.fish
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/./env.sh
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/./local_setup.sh
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/./setup.zsh
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/./local_setup.zsh
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/./local_setup.fish
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/./local_setup.bash
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/./setup.bash
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/./_setup_util.py
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/./setup.sh
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig-version.cmake
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig.cmake
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/lib/pkgconfig/catkin_tools_prebuild.pc
+Already unlinked: {}

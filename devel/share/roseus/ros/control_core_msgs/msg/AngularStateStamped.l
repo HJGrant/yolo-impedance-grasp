@@ -1,0 +1,1 @@
+/workspaces/ur10_final_project/devel/.private/control_core_msgs/share/roseus/ros/control_core_msgs/msg/AngularStateStamped.l

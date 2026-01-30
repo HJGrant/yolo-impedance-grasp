@@ -1,0 +1,16 @@
+Symlinking /workspaces/ur10_final_project/devel/lib/librviz_camera_stream.so
+Symlinking /workspaces/ur10_final_project/devel/lib/pkgconfig/rviz_camera_stream.pc
+Symlinking /workspaces/ur10_final_project/devel/share/rviz_camera_stream/cmake/rviz_camera_streamConfig-version.cmake
+Symlinking /workspaces/ur10_final_project/devel/share/rviz_camera_stream/cmake/rviz_camera_streamConfig.cmake
+Cleaning: (/workspaces/ur10_ws/devel/.private/rviz_camera_stream/share/rviz_camera_stream/cmake/rviz_camera_streamConfig-version.cmake, /workspaces/ur10_ws/devel/share/rviz_camera_stream/cmake/rviz_camera_streamConfig-version.cmake)
+Cleaning: (/workspaces/ur10_ws/devel/.private/rviz_camera_stream/share/rviz_camera_stream/cmake/rviz_camera_streamConfig.cmake, /workspaces/ur10_ws/devel/share/rviz_camera_stream/cmake/rviz_camera_streamConfig.cmake)
+Cleaning: (/workspaces/ur10_ws/devel/.private/rviz_camera_stream/lib/librviz_camera_stream.so, /workspaces/ur10_ws/devel/lib/librviz_camera_stream.so)
+Cleaning: (/workspaces/ur10_ws/devel/.private/rviz_camera_stream/lib/pkgconfig/rviz_camera_stream.pc, /workspaces/ur10_ws/devel/lib/pkgconfig/rviz_camera_stream.pc)
+Unlinking: /workspaces/ur10_ws/devel/share/rviz_camera_stream/cmake/rviz_camera_streamConfig-version.cmake
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/share/rviz_camera_stream/cmake/rviz_camera_streamConfig.cmake
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/lib/librviz_camera_stream.so
+Already unlinked: {}
+Unlinking: /workspaces/ur10_ws/devel/lib/pkgconfig/rviz_camera_stream.pc
+Already unlinked: {}

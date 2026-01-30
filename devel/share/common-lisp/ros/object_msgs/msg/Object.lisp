@@ -1,0 +1,1 @@
+/workspaces/ur10_final_project/devel/.private/object_msgs/share/common-lisp/ros/object_msgs/msg/Object.lisp

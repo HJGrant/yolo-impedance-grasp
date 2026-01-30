@@ -1,0 +1,1 @@
+/workspaces/ur10_final_project/devel/.private/tum_ics_ur10_description/lib/pkgconfig/tum_ics_ur10_description.pc
