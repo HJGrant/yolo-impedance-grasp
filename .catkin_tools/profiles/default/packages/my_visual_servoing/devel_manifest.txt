@@ -1,4 +1,5 @@
 my_visual_servoing
-/workspaces/ur10_ws/devel/.private/my_visual_servoing/lib/pkgconfig/my_visual_servoing.pc /workspaces/ur10_ws/devel/lib/pkgconfig/my_visual_servoing.pc
-/workspaces/ur10_ws/devel/.private/my_visual_servoing/share/my_visual_servoing/cmake/my_visual_servoingConfig-version.cmake /workspaces/ur10_ws/devel/share/my_visual_servoing/cmake/my_visual_servoingConfig-version.cmake
-/workspaces/ur10_ws/devel/.private/my_visual_servoing/share/my_visual_servoing/cmake/my_visual_servoingConfig.cmake /workspaces/ur10_ws/devel/share/my_visual_servoing/cmake/my_visual_servoingConfig.cmake
+/workspaces/ur10_final_project/devel/.private/my_visual_servoing/lib/pkgconfig/my_visual_servoing.pc /workspaces/ur10_final_project/devel/lib/pkgconfig/my_visual_servoing.pc
+/workspaces/ur10_final_project/devel/.private/my_visual_servoing/lib/my_visual_servoing/yolo_inference.py /workspaces/ur10_final_project/devel/lib/my_visual_servoing/yolo_inference.py
+/workspaces/ur10_final_project/devel/.private/my_visual_servoing/share/my_visual_servoing/cmake/my_visual_servoingConfig-version.cmake /workspaces/ur10_final_project/devel/share/my_visual_servoing/cmake/my_visual_servoingConfig-version.cmake
+/workspaces/ur10_final_project/devel/.private/my_visual_servoing/share/my_visual_servoing/cmake/my_visual_servoingConfig.cmake /workspaces/ur10_final_project/devel/share/my_visual_servoing/cmake/my_visual_servoingConfig.cmake

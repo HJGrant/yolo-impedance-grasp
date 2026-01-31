@@ -648,6 +648,7 @@ namespace ur
 
     cc::CartesianPosition X_0_b;
     cc::load(ns+"X_0_B", X_0_b);
+    //X_0_b.setIdentity();
     T_0_b_ = X_0_b;
     T_b_0_ = T_0_b_.inverse();
 

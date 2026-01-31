@@ -1,0 +1,13 @@
+<launch>
+  <node pkg="my_visual_servoing" type="yolo_inference.py" name="object_centroid_pub" output="screen">
+      </node>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_to_camera" 
+      args="1.5 0.0 0.7 3.14159 0 0 ursa_base_link camera_link" />
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="camera_to_optical" 
+        args="0 0 0 -1.5708 0 -1.5708 camera_link camera_rgb_optical_frame" />
+
+    <include file="$(find openni2_launch)/launch/openni2.launch" />
+
+  </launch>

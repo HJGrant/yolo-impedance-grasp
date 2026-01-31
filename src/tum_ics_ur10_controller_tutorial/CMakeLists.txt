@@ -84,6 +84,7 @@ add_library(my_robot_control_lli
    src/simple_effort_controller.cpp
    src/jointspace_controller.cpp
    src/cartesianspace_controller.cpp
+   src/visual_servo_controller.cpp
    ${MY_CTRL_INC}
 )
 target_link_libraries(my_robot_control_lli
@@ -110,6 +111,7 @@ set(APP_TARGETS
   simple_effort_controller_node
   jointspace_controller_node
   cartesianspace_controller_node
+  visual_servo_controller_node
 )
 
 foreach(target ${APP_TARGETS})

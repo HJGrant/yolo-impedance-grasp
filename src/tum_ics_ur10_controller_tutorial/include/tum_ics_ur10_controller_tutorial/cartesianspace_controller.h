@@ -6,6 +6,7 @@
 #include <control_core/trajectory/state_trajectories.h>
 #include <control_core/types.h>
 #include <control_core/trajectory/polynomial_trajectories.h>
+#include <visualization_msgs/Marker.h>
 
 
 namespace tum_ics_ur_robot_lli
@@ -45,6 +46,8 @@ namespace tum_ics_ur_robot_lli
       cc::CartesianStateSlerpTrajectory* CartesianTraj_; // pointer for cartesian trajectory
       ros::Time cartesian_traj_start_time_; // time for trajectory
 
+      ros::Publisher marker_pub_;
+
       double X_circ;
       double Y_circ;
       double PI;
@@ -60,6 +63,8 @@ namespace tum_ics_ur_robot_lli
       void setQHome(const JointState &qhome);
 
       void setQPark(const JointState &qpark);
+
+      void publishMarker(const cc::LinearPosition& pos, double r, double g, double b, int id);
 
     private:
       bool init();

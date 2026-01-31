@@ -1,0 +1,5 @@
+openni2_camera/openni2_launch
+/workspaces/ur10_final_project/devel/.private/openni2_launch/lib/pkgconfig/openni2_launch.pc /workspaces/ur10_final_project/devel/lib/pkgconfig/openni2_launch.pc
+/workspaces/ur10_final_project/devel/.private/openni2_launch/lib/python3/dist-packages/openni2_launch/__init__.py /workspaces/ur10_final_project/devel/lib/python3/dist-packages/openni2_launch/__init__.py
+/workspaces/ur10_final_project/devel/.private/openni2_launch/share/openni2_launch/cmake/openni2_launchConfig-version.cmake /workspaces/ur10_final_project/devel/share/openni2_launch/cmake/openni2_launchConfig-version.cmake
+/workspaces/ur10_final_project/devel/.private/openni2_launch/share/openni2_launch/cmake/openni2_launchConfig.cmake /workspaces/ur10_final_project/devel/share/openni2_launch/cmake/openni2_launchConfig.cmake
