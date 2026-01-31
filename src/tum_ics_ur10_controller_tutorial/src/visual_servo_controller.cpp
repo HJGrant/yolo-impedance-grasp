@@ -29,7 +29,8 @@ namespace tum_ics_ur_robot_lli
       DeltaQp_(Vector6d::Zero()),
       model_("ur10_model"),
       is_cartesian_flag_(false),
-      is_circular_flag_(true)
+      is_circular_flag_(true),
+      target_received_(false) 
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("joint_space_control_data", 1);
 
@@ -44,7 +45,9 @@ namespace tum_ics_ur_robot_lli
       theta_ = model_.parameterInitalGuess();
 
       // Default target (matches your previous X_start)
-      X_target_pt_ << 0.636946, 0.163941, 0.716149; 
+      // NOTE: This default was originally for Frame 0 (Z points up/down depending on yaml).
+      // We will now transform targets to WORLD Frame (ursa_base_link), so we flip coordinates approx.
+      X_target_pt_ << -0.636946, -0.163941, 0.716149; 
       
       // Subscribe to the topic published by your YOLO/TF node
       target_sub_ = nh_.subscribe("/target_point", 1, 
@@ -92,26 +95,43 @@ namespace tum_ics_ur_robot_lli
         geometry_msgs::PointStamped point_in;
         geometry_msgs::PointStamped point_out;
 
+        // 1. Pack the raw point into a PointStamped
+        //    Assuming the camera publishes in "camera_rgb_optical_frame"
         point_in.header.frame_id = "camera_rgb_optical_frame";
         point_in.header.stamp = ros::Time(0); // Get latest available transform
         point_in.point = *msg;
 
         try {
-            // Transform the point from camera optical to robot base
-            //tf_buffer_.transform(point_in, point_out, "ursa_base_link");
-            tf_buffer_.transform(point_in, point_out, model_.get0Frame());
+            // 2. Transform the point from camera optical frame to the robot's base frame.
+            //    "ursa_base_link" is the common base frame in your TF tree (Frame B).
+            tf_buffer_.transform(point_in, point_out, "ursa_base_link");
 
             std::lock_guard<std::mutex> lock(target_mutex_);
-            target_received_ = true;
-            last_target_time_ = ros::Time::now();
 
-            // Apply alpha filter to the TRANSFORMED coordinates
+            // Check if this is a "new" detection after a period of data loss
+            double dt_since_last = (ros::Time::now() - last_target_time_).toSec();
+            bool reset_filter = !target_received_ || (dt_since_last > 0.5);
+
+            // 3. Smooth the TRANSFORMED coordinates (now in World/Base frame)
+            //    We strictly filter the result of the transform, NOT the raw camera data.
+            //    Using a "lag" filter (Alpha filter)
             double alpha = 0.2; 
-            X_target_pt_.x() = alpha * point_out.point.x + (1.0 - alpha) * X_target_pt_.x();
-            X_target_pt_.y() = alpha * point_out.point.y + (1.0 - alpha) * X_target_pt_.y();
-            X_target_pt_.z() = alpha * point_out.point.z + (1.0 - alpha) * X_target_pt_.z();
+            
+            // On the FIRST valid reception (or re-acquisition), initialize the filter 
+            // with the current measurement to avoid dragging from an old position.
+            if (reset_filter) { 
+               X_target_pt_.x() = point_out.point.x;
+               X_target_pt_.y() = point_out.point.y;
+               X_target_pt_.z() = point_out.point.z;
+               target_received_ = true; // Mark as received
+               ROS_WARN_STREAM("Target Re-acquired! Resetting filter.");
+            } else {
+               X_target_pt_.x() = alpha * point_out.point.x + (1.0 - alpha) * X_target_pt_.x();
+               X_target_pt_.y() = alpha * point_out.point.y + (1.0 - alpha) * X_target_pt_.y();
+               X_target_pt_.z() = alpha * point_out.point.z + (1.0 - alpha) * X_target_pt_.z();
+            }
 
-            ROS_INFO_STREAM_THROTTLE(1.0, "Target in Base Link: " << X_target_pt_.transpose());
+            last_target_time_ = ros::Time::now();
         }
         catch (tf2::TransformException &ex) {
             ROS_WARN_STREAM_THROTTLE(2.0, "TF2 Exception: " << ex.what());
@@ -212,12 +232,10 @@ namespace tum_ics_ur_robot_lli
       //model_.broadcastFrames(current.q, ros::Time::now()); 
       Vector6d tau = Vector6d::Zero();
 
-      // 1. Get current Tool Pose (Frame 0)
-      cc::HomogeneousTransformation T_tool_0 = model_.T_tool_0(current.q);
-      cc::LinearPosition X_tool_0 = T_tool_0.position();
-      cc::Rotation3 R_tool_0 = T_tool_0.orientation();
+      cc::HomogeneousTransformation T_tool_B = model_.T_tool_B(current.q);
+      cc::LinearPosition X_tool_B = T_tool_B.position();
 
-      // 2. Fetch Bottle Position (Ensure this is being sent in Frame 0!)
+      // 2. Fetch Bottle Position (Ensure this is being sent in Frame B!)
       cc::LinearPosition X_target_raw;
       bool is_data_fresh = false;
       {
@@ -229,25 +247,38 @@ namespace tum_ics_ur_robot_lli
 
       // 3. TARGET LOGIC
       cc::LinearPosition Xd;
-      cc::AngularPosition Od = O_lock_; 
 
       if (!is_data_fresh) {
         if (!holding_pos_latched_) {
-            X_hold_ = X_tool_0; // Capture only the first time data is lost
+            X_hold_ = X_tool_B; // Capture in Frame B
             holding_pos_latched_ = true;
         }
-        Xd = X_hold_; 
+        Xd = X_hold_;
+        ROS_WARN_STREAM_THROTTLE(1.0, "Holding Position: " << Xd << "\n"); 
       } else {
         holding_pos_latched_ = false; // Reset when tracking is active
         Xd = X_target_raw; 
+        ROS_WARN_STREAM_THROTTLE(1.0, "Tracking Object. Target Position: " << Xd << "\n"); 
       }
 
-      publishMarker(Xd, 1.0, 0.0, 0.0, 0);
-      publishMarker(X_tool_0, 0.0, 1.0, 0.0, 1);
+      // Visualization: Direct in Frame B (ursa_base_link)
+      publishMarker(Xd, 1.0, 0.0, 0.0, 1);
+      publishMarker(X_tool_B, 0.0, 1.0, 0.0, 2);
 
-      // 4. Calculate Cartesian Errors
+      // 4. Calculate Cartesian Errors in Frame B
+      cc::LinearPosition Delta_X_lin_B = X_tool_B - Xd;
+
+      // Rotate Error to Frame 0 for Control Law
+      // T_B_0 (Transform Points in 0 to Points in B). R_B_0 (Rotates from 0 to B).
+      // We need to rotate FROM B TO 0. So we need R_B_0.inverse() or R_0_B.
+      // model_.T_0_B() returns T_0_B (points 0 -> points B? No, T_0->B transform).
+      // Let's rely on T_B_0().rotation() which is rotation of frame B expressed in 0?
+      // Wait. Delta_X_0 = R_0_B * Delta_X_B.
+      // R_0_B = model_.T_0_B().rotation().
+      cc::LinearPosition Delta_X_lin_0 = model_.T_0_B().rotation().inverse() * Delta_X_lin_B;
+
       cc::CartesianVector Delta_X; 
-      Delta_X.linear() << X_tool_0 - Xd;
+      Delta_X.linear() = Delta_X_lin_0;
       //Delta_X.angular() = -cc::logErrorWorld(Od, (cc::AngularPosition)R_tool_0);
       Delta_X.angular().setZero();
 
@@ -268,7 +299,26 @@ namespace tum_ics_ur_robot_lli
 
       cc::Jacobian::Inverse J_pinv = J_tool_0.dampedPinv(0.05, 0.5);
       Vector6d Qrp = J_pinv * Xrp; 
-      Vector6d Qrpp = J_pinv*(Xrpp - Jp_tool_0*Qrp);
+      
+      // --- Velocity Saturation (Added) ---
+      double max_vel = 0.5; // rad/s
+      double scale = 1.0;
+      double max_val = Qrp.lpNorm<Eigen::Infinity>(); // Max abs component
+      if (max_val > max_vel) {
+          scale = max_vel / max_val;
+          Qrp = Qrp * scale;
+      }
+
+      Vector6d Qrpp;
+      if (scale < 1.0) {
+          // If saturated, assume constant velocity "cruise" -> zero acceleration
+          // This avoids huge feedforward torques from trying to reach impossible velocities
+          Qrpp = Vector6d::Zero();
+      } else {
+          // Normal acceleration feedforward
+          Qrpp = J_pinv*(Xrpp - Jp_tool_0*Qrp);
+      }
+      // -----------------------------------
 
       // 6. Saturated Joint Space References
       JointState js_r;
@@ -276,16 +326,15 @@ namespace tum_ics_ur_robot_lli
       js_r.qp = Qrp;
       js_r.qpp = Qrpp;
 
-      //double cart_v_limit = 0.4; // Slightly faster for exact tracking
-      //for(int i = 0; i < 6; i++) {
-      //    js_r.qp(i) = std::max(std::min(Qrp_raw(i), cart_v_limit), -cart_v_limit);
-      //}
-      //js_r.qpp = Vector6d::Zero(); 
+      // (Previous simple clamping Loop removed here)
 
       // 7. Slotine-Li Control
       Yr_ = model_.regressor(current.q, current.qp, js_r.qp, js_r.qpp);
-      Vector6d Sx = Xp - Xrp;
-      Vector6d Sq= J_pinv*Sx;
+      
+      // Fix: Calculate Sq using the SATURATED Qrp. 
+      // Previously: Sq = J_pinv * (Xp - Xrp) used the huge unsaturated Xrp.
+      // Now: Sq = current.qp - Qrp (where Qrp is already saturated).
+      Vector6d Sq = current.qp - Qrp;
 
       cc::Scalar gamma_inv = 1.0;
       cc::Scalar dt = 0.002;
@@ -297,12 +346,6 @@ namespace tum_ics_ur_robot_lli
 
       tau = -Kd_ * Sq + Yr_ * theta_;
       ROS_WARN_STREAM_THROTTLE(1.0, "Cartesianspace Control \n");
-
-      Vector6d tau_feedback = -Kd_ * Sq;
-      Vector6d tau_feedforward = Yr_ * theta_;
-
-      ROS_INFO_STREAM_THROTTLE(1.0, "Feedback Torque (Gains): " << tau_feedback.transpose());
-      ROS_INFO_STREAM_THROTTLE(1.0, "Feedforward Torque (Model): " << tau_feedforward.transpose());
 
       return tau;
     }
@@ -320,33 +363,37 @@ namespace tum_ics_ur_robot_lli
 
       // 1. Generate Trajectory
       VVector6d vQd = getJointPVT5(qStart_, goal_, time.tD(), 7.0);
+      visualizeTrajectory(vQd);
 
       DeltaQ_ = current.q - vQd[0];
       DeltaQp_ = current.qp - vQd[1];
 
-      // 2. Define Reference State (with Saturation)
-      JointState js_r = current;
-      Vector6d qp_cmd = vQd[1] - Kp_ * DeltaQ_;
+      JointState js_r;
+      js_r = current;
+      js_r.qp = vQd[1] - Kp_ * DeltaQ_;
+      js_r.qpp = vQd[2] - Kp_ * DeltaQp_;
 
-      double v_limit = 0.5; // Cap velocity at 0.5 rad/s
-      for(int i=0; i<6; i++) {
-          js_r.qp(i) = std::max(std::min(qp_cmd(i), v_limit), -v_limit);
-      }
-
-      // USE ONLY THIS for acceleration to stay safe
-      js_r.qpp = vQd[2]; 
 
       // 3. Coordinate Math (Using Base Frame B to fix the 1.2m offset)
+      cc::HomogeneousTransformation T_tool_0 = model_.T_tool_0(current.q);
+      cc::LinearPosition X_tool_0 = T_tool_0.position();
+
       cc::HomogeneousTransformation T_tool_B = model_.T_tool_B(current.q);
-      cc::LinearPosition X_tool_0 = T_tool_B.position();
+      cc::LinearPosition X_tool_B = T_tool_B.position();
 
       cc::HomogeneousTransformation T_goal_B = model_.T_tool_B(goal_); 
       cc::LinearPosition X_joint_end = T_goal_B.position();
+      //cc::LinearPosition X_joint_end(0.8063, 0.1639, 0.6296);
 
-      publishMarker(X_joint_end, 1.0, 0.0, 0.0, 0);
-      publishMarker(X_tool_0, 0.0, 1.0, 0.0, 1);
+      // Visualization: Transform from Frame 0 to Frame B (ursa_base_link) for consistency
+      // But better yet, just trust T_tool_B if we want to be pure.
+      cc::HomogeneousTransformation T_0_B = model_.T_0_B();
+      publishMarker(X_joint_end, 1.0, 0.0, 0.0, 1); // Goal in B
+      publishMarker(X_tool_B, 0.0, 1.0, 0.0, 2);    // Tool in B
 
-      cc::LinearPosition pos_err = X_tool_0 - X_joint_end;
+      cc::LinearPosition pos_err = X_tool_B - X_joint_end;
+
+      //cc::LinearPosition Delta_X_lin_0 = model_.T_0_B().rotation().inverse() * Delta_X_lin_B;
 
       // 4. Slotine-Li Control Law
       Yr_ = model_.regressor(current.q, current.qp, js_r.qp, js_r.qpp);
@@ -372,8 +419,8 @@ namespace tum_ics_ur_robot_lli
         X_hold_ = T_start.position(); 
         
         ROS_WARN_STREAM("Joint Target reached. Switching to Cartesian!");
-        ROS_INFO_STREAM("Orientation O_lock_ in Base Link: " << O_lock_);
-        ROS_INFO_STREAM("theta_ right before switching: " << theta_);
+        //ROS_INFO_STREAM("Orientation O_lock_ in Base Link: " << O_lock_);
+        //ROS_INFO_STREAM("theta_ right before switching: " << theta_);
       }
   
       // publish the ControlData (only for debugging)
@@ -432,6 +479,40 @@ namespace tum_ics_ur_robot_lli
 
         marker.lifetime = ros::Duration(); // Permanent until replaced
         marker_pub_.publish(marker);
+    }
+
+    void VisualServoController::visualizeTrajectory(const VVector6d& trajectory) {
+        visualization_msgs::Marker line_strip;
+        line_strip.header.frame_id = "ursa_base_link"; // Use the correct ROS frame
+        line_strip.header.stamp = ros::Time::now();
+        line_strip.ns = "trajectory";
+        line_strip.action = visualization_msgs::Marker::ADD;
+        line_strip.pose.orientation.w = 1.0;
+        line_strip.id = 2;
+        line_strip.type = visualization_msgs::Marker::LINE_STRIP;
+
+        // Line width
+        line_strip.scale.x = 0.01; 
+
+        // Color: Blue for the planned path
+        line_strip.color.b = 1.0;
+        line_strip.color.a = 1.0;
+
+        for (const auto& q_step : trajectory) {
+            // Use T_tool_B for correct World Frame coordinates!
+            cc::HomogeneousTransformation T_tool_B = model_.T_tool_B(q_step);
+            
+            // Extract the position vector from the transformation
+            cc::LinearPosition pos = T_tool_B.position();
+
+            geometry_msgs::Point p;
+            p.x = pos.x(); 
+            p.y = pos.y();
+            p.z = pos.z();
+            line_strip.points.push_back(p);
+        }
+
+        marker_pub_.publish(line_strip);
     }
 
     bool VisualServoController::stop()

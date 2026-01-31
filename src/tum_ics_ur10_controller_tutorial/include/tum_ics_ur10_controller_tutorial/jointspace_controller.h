@@ -4,6 +4,8 @@
 #include <tum_ics_ur_robot_lli/RobotControllers/ControlEffort.h>
 #include <ur_model/ur_model.h>
 
+#include <visualization_msgs/Marker.h>
+
 namespace tum_ics_ur_robot_lli
 {
   namespace RobotControllers
@@ -33,6 +35,8 @@ namespace tum_ics_ur_robot_lli
       Vector6d goal_;
       double totalTime_;
 
+      ros::Publisher marker_pub_;
+
       Vector6d DeltaQ_;
       Vector6d DeltaQp_;
 
@@ -46,6 +50,8 @@ namespace tum_ics_ur_robot_lli
       void setQHome(const JointState &qhome);
 
       void setQPark(const JointState &qpark);
+
+      void publishMarker(const cc::LinearPosition& pos, double r, double g, double b, int id);
 
     private:
       bool init();

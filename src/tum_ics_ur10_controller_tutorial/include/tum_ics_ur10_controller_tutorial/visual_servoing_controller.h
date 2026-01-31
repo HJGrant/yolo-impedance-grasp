@@ -79,6 +79,8 @@ namespace tum_ics_ur_robot_lli
 
       void publishMarker(const cc::LinearPosition& pos, double r, double g, double b, int id);
 
+      void visualizeTrajectory(const VVector6d& trajectory);
+
     private:
       bool init();
 

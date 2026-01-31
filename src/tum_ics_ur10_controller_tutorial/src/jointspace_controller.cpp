@@ -24,6 +24,8 @@ namespace tum_ics_ur_robot_lli
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("joint_space_control_data", 1);
 
+      marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+    
       // load the initial parameters from the parameter server
       ROS_ERROR_STREAM("Initializing model!");
       if(!model_.initRequest(nh_))
@@ -145,7 +147,7 @@ namespace tum_ics_ur_robot_lli
 
 
       // broadcast TFs
-      model_.broadcastFrames(current.q, ros::Time::now()); 
+      // model_.broadcastFrames(current.q, ros::Time::now()); 
 
       // control torque
       Vector6d tau = Vector6d::Zero();
@@ -178,8 +180,15 @@ namespace tum_ics_ur_robot_lli
       ROS_WARN_STREAM("Q_w: \n" << Q_start.w());
       */
       
+
+      cc::HomogeneousTransformation T_tool_B = model_.T_tool_B(current.q);
+      cc::LinearPosition X_tool_B = T_tool_B.position();
+
+      cc::HomogeneousTransformation T_tool_0 = model_.T_tool_0(current.q);
+      cc::LinearPosition X_tool_0 = T_tool_0.position();
       
-      
+      publishMarker(X_tool_B, 0.0, 1.0, 0.0, 1);
+      publishMarker(X_tool_0, 1.0, 0.0, 0.0, 2);
       
       // load robot regressor
       Yr_ = model_.regressor(vQd[1], vQd[2], js_r.qp, js_r.qpp);
@@ -249,6 +258,39 @@ namespace tum_ics_ur_robot_lli
       // tau.setZero()
       return tau;
       
+    }
+
+    void JointSpaceController::publishMarker(const cc::LinearPosition& pos, double r, double g, double b, int id) {
+        visualization_msgs::Marker marker;
+        // VERY IMPORTANT: Set this to "ursa_base_link" or "world" 
+        // depending on which frame your LinearPosition is calculated in!
+        marker.header.frame_id = "ursa_base_link"; 
+        marker.header.stamp = ros::Time::now();
+        marker.ns = "target_position";
+        marker.id = id;
+        marker.type = visualization_msgs::Marker::SPHERE;
+        marker.action = visualization_msgs::Marker::ADD;
+
+        // Set the position from your LinearPosition variable
+        marker.pose.position.x = pos.x();
+        marker.pose.position.y = pos.y();
+        marker.pose.position.z = pos.z();
+        
+        marker.pose.orientation.w = 1.0; // Neutral orientation
+
+        // Set the scale (size of the sphere)
+        marker.scale.x = 0.05; // 5cm
+        marker.scale.y = 0.05;
+        marker.scale.z = 0.05;
+
+        // Set the color
+        marker.color.r = r;
+        marker.color.g = g;
+        marker.color.b = b;
+        marker.color.a = 1.0; // Must be 1.0 (opaque) to see it!
+
+        marker.lifetime = ros::Duration(); // Permanent until replaced
+        marker_pub_.publish(marker);
     }
 
     bool JointSpaceController::stop()

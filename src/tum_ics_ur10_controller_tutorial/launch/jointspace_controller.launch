@@ -16,6 +16,8 @@
 
     <!-- controller parameter --> 
     <rosparam file="$(find tum_ics_ur10_controller_tutorial)/launch/configs/jointspace_controller.yaml" command="load" />
+
+    <rosparam file="$(find ur_model)/launch/configs/ur10_model.yaml" command="load" />
     
   </node>
 

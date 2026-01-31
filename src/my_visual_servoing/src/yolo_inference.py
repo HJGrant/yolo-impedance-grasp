@@ -91,23 +91,27 @@ class YOLOv8:
 
         # In your callback, after getting best_mask:
         if best_mask is not None and self.current_depth_map is not None:
-            
             cloud_msg, centroid = self.get_masked_cloud(best_mask, self.current_depth_map)
+            
+            # If filtering in get_masked_cloud returns None, skip publishing
+            if cloud_msg is None:
+                return
 
-            # Create and publish message
+            # Create and publish messages
             point_msg = Point()
-            point_msg.x = centroid[0] # Horizontal pixel
-            point_msg.y = centroid[1] # Vertical pixel
-            point_msg.z = centroid[2] # Distance in meters
+            point_msg.x = centroid[0] 
+            point_msg.y = centroid[1] 
+            point_msg.z = centroid[2] 
             self.coord_pub.publish(point_msg) 
-
             self.pc_pub.publish(cloud_msg)
-
             self.publish_marker(centroid)
-        elif not self.current_depth_map:
-            rospy.loginfo(f"No depth map available. Not publishing target..")
-        elif not best_mask:
-            rospy.loginfo(f"No best_mask. Not publishing target..")
+
+        else:
+            # Specific logging to see WHICH one is missing
+            if self.current_depth_map is None:
+                rospy.logwarn_throttle(5, "Waiting for depth map on /camera/depth/image_rect_raw...")
+            if best_mask is None:
+                rospy.loginfo_throttle(5, f"Target class {target_class_id} not detected in RGB frame.")
     
     def get_masked_cloud(self, mask, depth_map):
         # 1. Get indices where mask is True
@@ -189,10 +193,10 @@ class YOLOv8:
         marker.scale.z = 0.05
         
         # Color: Bright Green (don't forget A=1.0 for visibility!)
-        marker.color.r = 0.0
+        marker.color.r = 1.0
         marker.color.g = 1.0
         marker.color.b = 0.0
-        marker.color.a = 1.0 
+        marker.color.a = 1.0
         
         self.marker_pub.publish(marker)
 

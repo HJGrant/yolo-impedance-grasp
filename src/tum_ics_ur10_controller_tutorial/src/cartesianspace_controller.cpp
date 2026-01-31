@@ -180,7 +180,7 @@ namespace tum_ics_ur_robot_lli
       }
       
       // broadcast TFs
-      model_.broadcastFrames(current.q, ros::Time::now()); 
+      // model_.broadcastFrames(current.q, ros::Time::now()); 
 
       // control torque
       Vector6d tau = Vector6d::Zero();
@@ -294,7 +294,7 @@ namespace tum_ics_ur_robot_lli
       }
 
       // broadcast TFs
-      model_.broadcastFrames(current.q, ros::Time::now()); 
+      // model_.broadcastFrames(current.q, ros::Time::now()); 
 
       // control torque
       Vector6d tau = Vector6d::Zero();
@@ -315,17 +315,17 @@ namespace tum_ics_ur_robot_lli
 
       // get position error of tool and target
       cc::LinearPosition X_joint_end(0.8063, 0.1639, 0.6296);
-      cc::HomogeneousTransformation T_tool_B = model_.T_tool_B(current.q);
-      cc::LinearPosition X_tool_B = T_tool_B.position();
-      cc::Rotation3 R_tool_B = T_tool_B.orientation();
-      Eigen::Quaterniond Q_start(R_tool_B);
+      cc::HomogeneousTransformation T_tool_0 = model_.T_tool_0(current.q);
+      cc::LinearPosition X_tool_0 = T_tool_0.position();
+      cc::Rotation3 R_tool_0 = T_tool_0.orientation();
+      Eigen::Quaterniond Q_start(R_tool_0);
 
       publishMarker(X_joint_end, 1.0, 0.0, 0.0, 0);
-      publishMarker(X_tool_B, 0.0, 1.0, 0.0, 1);
+      publishMarker(X_tool_0, 0.0, 1.0, 0.0, 1);
 
-      ROS_WARN_STREAM_THROTTLE(1.0, "X_tool_B: " << X_tool_B << "\n");
+      ROS_WARN_STREAM("X_tool_0: " << X_tool_0 << "\n");
       
-      cc::LinearPosition pos_err = X_tool_B - X_joint_end;
+      cc::LinearPosition pos_err = X_tool_0 - X_joint_end;
 
       // load robot regressor
       Yr_ = model_.regressor(vQd[1], vQd[2], js_r.qp, js_r.qpp);
@@ -344,7 +344,7 @@ namespace tum_ics_ur_robot_lli
       } 
 
       tau = -Kd_ * Sq + Yr_*theta_;
-      ROS_WARN_STREAM("JointSpace Control \n");
+      ROS_WARN_STREAM_THROTTLE(2.0, "JointSpace Control \n");
       //ROS_WARN_STREAM("Position error: \n" <<pos_err.norm());
       //ROS_WARN_STREAM("Velocity error: \n" <<Sq.norm());
   
