@@ -19,7 +19,6 @@
     
   </node>
 
-
   <rosparam file="$(find ur_model)/launch/configs/ur10_model.yaml" command="load" />
 
 </launch>

@@ -410,9 +410,11 @@ namespace tum_ics_ur_robot_lli
         startFlag_ = false;
         is_cartesian_flag_ = true;
 
-        cc::HomogeneousTransformation T_start = model_.T_tool_B(current.q);
-        O_lock_ = T_start.orientation();
-        X_hold_ = T_start.position(); 
+        cc::HomogeneousTransformation T_start_B = model_.T_tool_B(current.q);
+        X_hold_ = T_start_B.position(); 
+
+        cc::HomogeneousTransformation T_start_0 = model_.T_tool_0(current.q);
+        O_lock_ = T_start_0.orientation();
         
         ROS_WARN_STREAM("Joint Target reached. Switching to Cartesian!");
         //ROS_INFO_STREAM("Orientation O_lock_ in Base Link: " << O_lock_);
