@@ -14,6 +14,16 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install -U ultralytics --no-cache-dir
 
+RUN printf "\n\
+    rosmaster_ur10(){\n\
+        export ROS_MASTER_URI=http://192.168.1.3:11311\n\
+        export ROS_IP=192.168.1.3\n\
+    }\n\
+    \n\
+    rosmaster_local(){\n\
+        export ROS_MASTER_URI=http://localhost:11311\n\
+        export ROS_IP=127.0.0.1\n\
+    }\n" >> /home/devel/.bashrc
 
 # Switch back to the 'devel' user so you aren't root inside the terminal
 USER devel

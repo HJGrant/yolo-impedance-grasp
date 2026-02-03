@@ -264,25 +264,23 @@ namespace tum_ics_ur_robot_lli
       publishMarker(Xd, 1.0, 0.0, 0.0, 1);
       publishMarker(X_tool_B, 0.0, 1.0, 0.0, 2);
 
-      // 4. Calculate Cartesian Errors in Frame B
+      // Compute Control Error for the Linear Position
       cc::LinearPosition Delta_X_lin_B = X_tool_B - Xd;
-
-      // Rotate Error to Frame 0 for Control Law
-      // T_B_0 (Transform Points in 0 to Points in B). R_B_0 (Rotates from 0 to B).
-      // We need to rotate FROM B TO 0. So we need R_B_0.inverse() or R_0_B.
-      // model_.T_0_B() returns T_0_B (points 0 -> points B? No, T_0->B transform).
-      // Let's rely on T_B_0().rotation() which is rotation of frame B expressed in 0?
-      // Wait. Delta_X_0 = R_0_B * Delta_X_B.
-      // R_0_B = model_.T_0_B().rotation().
+      // rotate the linear error in the B-frame into the 0-frame
       cc::LinearPosition Delta_X_lin_0 = model_.T_0_B().rotation().inverse() * Delta_X_lin_B;
 
       cc::CartesianVector Delta_X; 
       Delta_X.linear() = Delta_X_lin_0;
-      //Delta_X.angular() = -cc::logErrorWorld(Od, (cc::AngularPosition)R_tool_0);
-      Delta_X.angular().setZero();
 
-      ROS_WARN_STREAM_THROTTLE(1.0, "Linear Error Delta_X.linear: " << Delta_X.linear() << "\n");
-      ROS_WARN_STREAM_THROTTLE(1.0, "Linear Error Delta_X.angular: " << Delta_X.angular() << "\n");
+      // compute the error for the orientation
+      cc::HomogeneousTransformation T_tool_0 = model_.T_tool_0(current.q);
+      cc::Rotation3 R_tool_0 = T_tool_0.orientation();
+      cc::AngularPosition O_tool_0 = R_tool_0;
+      
+      // get the desired orienation
+      cc::AngularPosition Od = O_lock_
+
+      Delta_X.angular() = -cc::logErrorWorld(Od, O_tool_0);
 
       // 5. Reference Velocity
       cc::Jacobian J_tool_0 = model_.J_tool_0(current.q);

@@ -6,6 +6,14 @@
 		"context": ".."
 	},
 
+	"forwardPorts": [11311, 9090, 33958],
+    "portsAttributes": {
+        "11311": {
+            "label": "ROS Master",
+            "onAutoForward": "silent"
+        }
+    },
+
 	"containerEnv" : {
 		"CONT_PWD" : "${containerWorkspaceFolder}",
 		"DISPLAY" : "${localEnv:DISPLAY}",
