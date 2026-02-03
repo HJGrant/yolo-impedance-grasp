@@ -1,5 +1,0 @@
-robot_descriptions/prr_robot/prr_robot_description
-/workspaces/ur10_ws/devel/.private/prr_robot_description/share/prr_robot_description/cmake/prr_robot_descriptionConfig.cmake /workspaces/ur10_ws/devel/share/prr_robot_description/cmake/prr_robot_descriptionConfig.cmake
-/workspaces/ur10_ws/devel/.private/prr_robot_description/share/prr_robot_description/cmake/prr_robot_descriptionConfig-version.cmake /workspaces/ur10_ws/devel/share/prr_robot_description/cmake/prr_robot_descriptionConfig-version.cmake
-/workspaces/ur10_ws/devel/.private/prr_robot_description/lib/pkgconfig/prr_robot_description.pc /workspaces/ur10_ws/devel/lib/pkgconfig/prr_robot_description.pc
-/workspaces/ur10_ws/devel/.private/prr_robot_description/lib/prr_robot_description/testMeshScaling /workspaces/ur10_ws/devel/lib/prr_robot_description/testMeshScaling

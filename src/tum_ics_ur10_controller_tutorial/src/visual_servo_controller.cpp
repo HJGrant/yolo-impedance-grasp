@@ -215,7 +215,6 @@ namespace tum_ics_ur_robot_lli
       return true;
     }
 
-
     Vector6d VisualServoController::update(const RobotTime &time, const JointState &current)
     {
       if(!is_cartesian_flag_)
@@ -350,7 +349,6 @@ namespace tum_ics_ur_robot_lli
       return tau;
     }
 
-
     Vector6d VisualServoController::updateJoint(const RobotTime &time, const JointState &current)
     {
       if (!startFlag_)
@@ -363,7 +361,7 @@ namespace tum_ics_ur_robot_lli
 
       // 1. Generate Trajectory
       VVector6d vQd = getJointPVT5(qStart_, goal_, time.tD(), 7.0);
-      visualizeTrajectory(vQd);
+      //visualizeTrajectory(vQd);
 
       DeltaQ_ = current.q - vQd[0];
       DeltaQp_ = current.qp - vQd[1];
@@ -396,7 +394,7 @@ namespace tum_ics_ur_robot_lli
       //cc::LinearPosition Delta_X_lin_0 = model_.T_0_B().rotation().inverse() * Delta_X_lin_B;
 
       // 4. Slotine-Li Control Law
-      Yr_ = model_.regressor(current.q, current.qp, js_r.qp, js_r.qpp);
+      Yr_ = model_.regressor(vQd[1], vQd[2], js_r.qp, js_r.qpp);
       Vector6d Sq = current.qp - js_r.qp;
       
       cc::Scalar gamma_inv = 1.0;
@@ -414,7 +412,7 @@ namespace tum_ics_ur_robot_lli
         startFlag_ = false;
         is_cartesian_flag_ = true;
 
-        cc::HomogeneousTransformation T_start = model_.T_tool_0(current.q);
+        cc::HomogeneousTransformation T_start = model_.T_tool_B(current.q);
         O_lock_ = T_start.orientation();
         X_hold_ = T_start.position(); 
         
@@ -446,7 +444,6 @@ namespace tum_ics_ur_robot_lli
       return tau;
       
     }
-
 
     void VisualServoController::publishMarker(const cc::LinearPosition& pos, double r, double g, double b, int id) {
         visualization_msgs::Marker marker;

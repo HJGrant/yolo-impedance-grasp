@@ -1,4 +1,0 @@
-robot_descriptions/r2_robot/r2_robot_description
-/workspaces/ur10_ws/devel/.private/r2_robot_description/share/r2_robot_description/cmake/r2_robot_descriptionConfig-version.cmake /workspaces/ur10_ws/devel/share/r2_robot_description/cmake/r2_robot_descriptionConfig-version.cmake
-/workspaces/ur10_ws/devel/.private/r2_robot_description/share/r2_robot_description/cmake/r2_robot_descriptionConfig.cmake /workspaces/ur10_ws/devel/share/r2_robot_description/cmake/r2_robot_descriptionConfig.cmake
-/workspaces/ur10_ws/devel/.private/r2_robot_description/lib/pkgconfig/r2_robot_description.pc /workspaces/ur10_ws/devel/lib/pkgconfig/r2_robot_description.pc

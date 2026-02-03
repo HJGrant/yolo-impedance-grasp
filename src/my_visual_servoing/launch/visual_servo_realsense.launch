@@ -1,0 +1,22 @@
+<launch>
+  <node pkg="my_visual_servoing" type="yolo_inference.py" name="object_centroid_pub" output="screen">
+      <remap from="/camera/rgb/image_rect_color" to="/camera/color/image_raw" />
+      <remap from="/camera/depth/image_rect_raw" to="/camera/aligned_depth_to_color/image_raw" />
+      <remap from="/camera/rgb/camera_info" to="/camera/color/camera_info" />
+  </node>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_to_camera" 
+      args="1.5 0.0 0.7 3.14159 0 0 ursa_base_link camera_link" />
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="camera_to_optical" 
+        args="0 0 0 -1.5708 0 -1.5708 camera_link camera_rgb_optical_frame" />
+
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+      <arg name="enable_pointcloud" value="false" />
+      <arg name="align_depth"      value="true" />
+      <arg name="color_width"      value="640" />
+      <arg name="color_height"     value="480" />
+      <arg name="color_fps"        value="30" />
+  </include>
+
+</launch>

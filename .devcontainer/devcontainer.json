@@ -1,7 +1,10 @@
 // For format details, see https://aka.ms/devcontainer.json.
 {
 	"name": "ROS noetic",
-	"image": "tum-ics-ros:noetic-ics-msbrdm-devel-vscode",
+	"build": {
+		"dockerfile": "../docker/Dockerfile",
+		"context": ".."
+	},
 
 	"containerEnv" : {
 		"CONT_PWD" : "${containerWorkspaceFolder}",
@@ -23,7 +26,11 @@
 		"--runtime=nvidia",
 		"--env", "DISPLAY=${localEnv:DISPLAY}",
 		"--env", "QT_X11_NO_MITSHM=1",
-		"--env", "XDG_RUNTIME_DIR=/tmp"
+		"--env", "XDG_RUNTIME_DIR=/tmp",
+		"--device-cgroup-rule=c 189:* rmw",
+		"--add-host", "ur10_final_project_devcont:127.0.0.1",
+        "--group-add=plugdev",
+        "--group-add=video"
 	],
 
 	"mounts": [
@@ -41,14 +48,22 @@
 			"source": "/dev", 
 			"target": "/dev",
 			"type": "bind"
-		}
+		},
+
+		{ 
+            "source": "/dev/bus/usb", 
+            "target": "/dev/bus/usb",
+            "type": "bind" 
+        }
 		,
 		{ 
-		 	"source": "/home/${localEnv:USER}/TUM/msei_s3/msbrdm/ur10_ws", 
+		 	"source": "/home/${localEnv:USER}/TUM/msei_s3/msbrdm/ur10_final_project", 
 		 	"target": "/UR10_WS",
 		 	"type": "bind"
 		}
 	],
+
+	"postCreateCommand": "sudo dpkg -i /workspaces/ur10_final_project/noetic_ubuntu20/*.deb || sudo apt-get install -f -y",
 
 	"customizations": {
 		"vscode": {

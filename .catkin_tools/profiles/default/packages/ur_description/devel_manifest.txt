@@ -1,4 +1,0 @@
-robot_descriptions/ur_robot/ur_description
-/workspaces/ur10_ws/devel/.private/ur_description/share/ur_description/cmake/ur_descriptionConfig-version.cmake /workspaces/ur10_ws/devel/share/ur_description/cmake/ur_descriptionConfig-version.cmake
-/workspaces/ur10_ws/devel/.private/ur_description/share/ur_description/cmake/ur_descriptionConfig.cmake /workspaces/ur10_ws/devel/share/ur_description/cmake/ur_descriptionConfig.cmake
-/workspaces/ur10_ws/devel/.private/ur_description/lib/pkgconfig/ur_description.pc /workspaces/ur10_ws/devel/lib/pkgconfig/ur_description.pc
