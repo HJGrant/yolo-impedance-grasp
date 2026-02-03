@@ -278,7 +278,7 @@ namespace tum_ics_ur_robot_lli
       cc::AngularPosition O_tool_0 = R_tool_0;
       
       // get the desired orienation
-      cc::AngularPosition Od = O_lock_
+      cc::AngularPosition Od = O_lock_;
 
       Delta_X.angular() = -cc::logErrorWorld(Od, O_tool_0);
 
