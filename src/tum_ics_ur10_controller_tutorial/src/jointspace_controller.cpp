@@ -188,7 +188,11 @@ namespace tum_ics_ur_robot_lli
       cc::LinearPosition X_tool_0 = T_tool_0.position();
       
       publishMarker(X_tool_B, 0.0, 1.0, 0.0, 1);
-      publishMarker(X_tool_0, 1.0, 0.0, 0.0, 2);
+
+      cc::HomogeneousTransformation T_ef_B = model_.T_ef_B(current.q);
+      cc::LinearPosition X_ef_B = T_ef_B.position();
+
+      publishMarker(X_ef_B, 0.0, 0.9, 0.1, 3);
       
       // load robot regressor
       Yr_ = model_.regressor(vQd[1], vQd[2], js_r.qp, js_r.qpp);
