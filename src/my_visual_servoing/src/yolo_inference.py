@@ -4,6 +4,7 @@ import rospy
 import cv2
 import numpy as np
 from cv_bridge import CvBridge
+
 from vision_msgs.msg import Detection2DArray
 from sensor_msgs.msg import PointCloud2, Image, CameraInfo
 from std_msgs.msg import Float64MultiArray
