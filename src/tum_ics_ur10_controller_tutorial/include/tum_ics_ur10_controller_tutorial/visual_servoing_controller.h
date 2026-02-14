@@ -8,11 +8,14 @@
 #include <control_core/trajectory/polynomial_trajectories.h>
 
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <mutex>
 //#include <tf/transform_listener.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/Marker.h>
+#include <tf2_ros/transform_broadcaster.h> 
+#include <Eigen/Geometry>  
 
 namespace tum_ics_ur_robot_lli
 {
@@ -51,15 +54,18 @@ namespace tum_ics_ur_robot_lli
       ros::Subscriber target_sub_;
       cc::LinearPosition X_target_pt_; // Latest point from ROS
       std::mutex target_mutex_;        // Thread safety
-      void targetCallback(const geometry_msgs::Point::ConstPtr& msg);
+      void targetCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
       bool target_received_;
-      cc::Rotation3 O_lock_;
+      // cc::Rotation3 O_target_;        // Desired orientation from target pose 
+      Eigen::Quaterniond target_quat_B_; 
+      bool target_pose_received_ = false;
       ros::Time last_target_time_;
       tf2_ros::Buffer tf_buffer_;
       tf2_ros::TransformListener tf_listener_{tf_buffer_};
       cc::LinearPosition X_hold_;
       bool holding_pos_latched_ = false;
       ros::Publisher marker_pub_;
+      tf2_ros::TransformBroadcaster tf_broadcaster_;  
 
       double X_circ;
       double Y_circ;

@@ -57,7 +57,7 @@
         }
 		,
 		{ 
-		 	"source": "/home/${localEnv:USER}/TUM/msei_s3/msbrdm/ur10_final_project", 
+		 	"source": "/home/${localEnv:USER}/TUM//ur10_final_project", 
 		 	"target": "/UR10_WS",
 		 	"type": "bind"
 		}
