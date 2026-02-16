@@ -86,6 +86,7 @@ namespace tum_ics_ur_robot_lli
                     &VisualServoController::targetCallback, this);
 
       marker_pub_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+      target_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("cartesian_target_pose", 1);
 
       ROS_WARN_STREAM("=== VisualServoController constructed. Subscribing /target_pose (PoseStamped) ===");
 
@@ -252,14 +253,39 @@ namespace tum_ics_ur_robot_lli
         startFlag_ = true;
       }
 
+      static bool first_run = false;
+      if (first_run) {
+          cc::HomogeneousTransformation T_init = model_.T_tool_0(current.q);
+          X_hold_0_ = T_init.position();
+          
+          O_hold_0_ = T_init.orientation();
+          
+          first_run = false;
+          ROS_WARN("INTERNAL LATCH: Hard-synced and Normalized.");
+      }
+
       // 2. Fetch Current Robot State (Frame 0)
       cc::HomogeneousTransformation T_tool_0 = model_.T_tool_0(current.q);
       cc::LinearPosition X_curr_0 = T_tool_0.position();
       cc::Rotation3 R_curr_0 = T_tool_0.orientation();
+
+      cc::Rotation3 Rd_0 = cc::Rotation3::Identity();
+      Rd_0 = O_hold_0_;
+      ROS_INFO_STREAM_THROTTLE(2.0, "Rd_0: \n" << Rd_0.matrix());
+      cc::Rotation3 R_diff = R_curr_0.transpose() * Rd_0;
+      ROS_INFO_STREAM_THROTTLE(2.0, "Rotation Offset Matrix: \n" << R_diff.matrix());
+
+      if (std::fmod(time.tD(), 2.0) < 0.002) { 
+          printRotation("CURRENT EE", R_curr_0);
+          printRotation("DESIRED (Rd_0)", Rd_0);
+          
+          // Also print the difference matrix
+          cc::Rotation3 R_diff = R_curr_0.transpose() * Rd_0;
+          printRotation("OFFSET", R_diff);
+      }
       
       // 3. Thread-Safe Target Acquisition (Frame 0)
       cc::LinearPosition Xd_0;
-      cc::Rotation3 Rd_0;
       bool is_fresh = false;
 
       {
@@ -271,6 +297,7 @@ namespace tum_ics_ur_robot_lli
           Xd_0 = X_target_0_; // Position in 0 (calculated in callback)
           Rd_0 = O_target_0_; // Orientation in 0 (calculated in callback)
           holding_pos_latched_ = false;
+          ROS_INFO_THROTTLE(2.0, "Tracking Active Target.");
         } else {
           // Data lost: Latch position if first time, otherwise use latched values
           if (!holding_pos_latched_) {
@@ -278,6 +305,7 @@ namespace tum_ics_ur_robot_lli
             holding_pos_latched_ = true;
             ROS_WARN("Visual Target Lost -> Latching current pose.");
           }
+          ROS_INFO_THROTTLE(2.0,"Holding Target.");
           Xd_0 = X_hold_0_;
           Rd_0 = O_hold_0_; // Orientation latched during mode switch
         }
@@ -287,8 +315,26 @@ namespace tum_ics_ur_robot_lli
       cc::CartesianVector Delta_X;
       cc::AngularPosition O_tool_0_ = R_curr_0;
       cc::AngularPosition Od = Rd_0;
+
       Delta_X.linear() = X_curr_0 - Xd_0;
       Delta_X.angular() = -cc::logErrorWorld(O_tool_0_, Od);
+
+      this->publishTargetPose(Xd_0, Rd_0);
+
+      static bool last_cartesian_flag = false;
+      if (is_cartesian_flag_ && !last_cartesian_flag) {
+          double lin_err = Delta_X.linear().norm();
+          double ang_err = Delta_X.angular().norm();
+          
+          ROS_WARN_STREAM("!!! SWITCH SYNC CHECK !!!");
+          ROS_WARN_STREAM("Linear Error Magnitude: " << lin_err << " m");
+          ROS_WARN_STREAM("Angular Error Magnitude: " << ang_err << " rad (" << ang_err * 57.29 << " deg)");
+          
+          if (ang_err > 0.1) {
+              ROS_ERROR_STREAM("CRITICAL: Large orientation error at switch! Check Od vs O_tool_0_");
+          }
+      }
+      last_cartesian_flag = is_cartesian_flag_;
 
       // 5. Kinematics & Jacobians (Frame 0)
       cc::Jacobian J = model_.J_tool_0(current.q);
@@ -494,6 +540,63 @@ namespace tum_ics_ur_robot_lli
         }
 
         marker_pub_.publish(line_strip);
+    }
+
+    void VisualServoController::publishTargetPose(const cc::LinearPosition& Xd_0, const cc::Rotation3& R_target_0)
+    {
+        // 1. Safety Check
+        if (!Xd_0.allFinite() || !R_target_0.matrix().allFinite()) return;
+
+        // 2. Transform from Frame 0 to Frame B
+        // X_B = T_B_0 * X_0
+        cc::HomogeneousTransformation T_B_0 = model_.T_0_B().inverse();
+        cc::LinearPosition X_B = T_B_0 * Xd_0;
+        cc::Rotation3 R_B = T_B_0.rotation() * R_target_0;
+
+        geometry_msgs::PoseStamped msg;
+        msg.header.stamp = ros::Time::now();
+        msg.header.frame_id = "ursa_base_link"; // Correct Frame B ID
+
+        msg.pose.position.x = X_B.x();
+        msg.pose.position.y = X_B.y();
+        msg.pose.position.z = X_B.z();
+
+        // 3. Convert Matrix to Quaternion
+        Eigen::Quaterniond q(R_B.matrix());
+        
+        if (std::abs(q.norm() - 1.0) > 0.1 || !std::isfinite(q.w())) {
+            msg.pose.orientation.w = 1.0; 
+            msg.pose.orientation.x = 0.0;
+            msg.pose.orientation.y = 0.0;
+            msg.pose.orientation.z = 0.0;
+        } else {
+            q.normalize();
+            msg.pose.orientation.x = q.x();
+            msg.pose.orientation.y = q.y();
+            msg.pose.orientation.z = q.z();
+            msg.pose.orientation.w = q.w();
+        }
+
+        target_pose_pub_.publish(msg);
+    }
+
+    void VisualServoController::printRotation(const std::string& label, const cc::Rotation3& R)
+    {
+        // 1. Convert ControlCore Rotation3 to Eigen Matrix
+        Eigen::Matrix3d mat = R.matrix();
+        
+        // 2. Convert Matrix to Euler Angles (ZYX convention: Yaw, Pitch, Roll)
+        // Returns a vector: [0]=Yaw, [1]=Pitch, [2]=Roll
+        Eigen::Vector3d euler = mat.eulerAngles(2, 1, 0);
+
+        // 3. Convert Radians to Degrees
+        double yaw   = euler[0] * 57.2958;
+        double pitch = euler[1] * 57.2958;
+        double roll  = euler[2] * 57.2958;
+
+        ROS_INFO_STREAM(label << " [RPY deg]: " 
+            << std::fixed << std::setprecision(2)
+            << "R: " << roll << ", P: " << pitch << ", Y: " << yaw);
     }
 
     bool VisualServoController::stop()
