@@ -226,9 +226,14 @@ namespace tum_ics_ur_robot_lli
             }
 
             // CALCULATE FRAME 0 TARGET HERE
-            Eigen::Matrix3d R_B_to_0 = model_.T_0_B().rotation().matrix().transpose();
-            O_target_0_ = cc::Rotation3(R_B_to_0 * target_quat_B_.toRotationMatrix());
+            //Eigen::Matrix3d R_B_to_0 = model_.T_0_B().rotation().matrix().transpose();
+            cc::HomogeneousTransformation T_0_B = model_.T_0_B();
+            Eigen::Matrix3d R_0_to_B = T_0_B.orientation().matrix();
+            Eigen::Matrix3d R_B_to_0 = R_0_to_B.transpose();
+            O_target_0_ = R_B_to_0 * target_quat_B_.toRotationMatrix();
             
+            ROS_WARN_STREAM_THROTTLE(2.0, "O_target_0_ in callback(): " << O_target_0_.matrix());
+
             // CALCULATE FRAME 0 POSITION HERE
             // (X_0 = R_0_B * X_B + P_0_B)
             X_target_0_ = model_.T_0_B() * X_target_B_;
@@ -276,8 +281,15 @@ namespace tum_ics_ur_robot_lli
       cc::Rotation3 R_curr_0 = T_tool_0.orientation();
 
       // 3. Thread-Safe Target Acquisition (Frame 0)
-      cc::LinearPosition Xd_0;
       bool is_fresh = false;
+
+      /*
+      We need to make sure at all times, that we aren't passing garbage data between 
+      the methods. For this we need to make sure that we are using the .matrix() method
+      on our objects. When passing cc::LinearPosition or cc::Rotation3 objects to other 
+      cc:... objects. If we are passing Eigen:: objects to cc:: we do not need the .matrix()
+      method call. This method call performs a deep copy of the data.
+      */
 
       {
         std::lock_guard<std::mutex> lock(target_mutex_);
@@ -286,7 +298,11 @@ namespace tum_ics_ur_robot_lli
 
         if (is_fresh) {
           Xd_0 = X_target_0_.matrix(); // Position in 0 (calculated in callback)
-          Rd_0 = O_target_0_.matrix(); // Orientation in 0 (calculated in callback)
+          Rd_0 = O_target_0_;//
+
+          ROS_WARN_STREAM_THROTTLE(2.0, "O_target_0_ in update(): " << O_target_0_.matrix());
+          ROS_WARN_STREAM_THROTTLE(2.0, "Rd_0 in update(): " << Rd_0.matrix());
+
           holding_pos_latched_ = false;
           ROS_INFO_THROTTLE(2.0, "Tracking Active Target.");
         } else {
@@ -307,15 +323,15 @@ namespace tum_ics_ur_robot_lli
 
       // 4. Calculate Cartesian Error (Frame 0)
       cc::CartesianVector Delta_X;
-      cc::AngularPosition O_tool_0_ = R_curr_0;
+      cc::AngularPosition O_tool_0_ = R_curr_0.matrix();
 
 
-      cc::AngularPosition Od = Rd_0;
+      cc::AngularPosition Od = Rd_0.matrix();
 
       Delta_X.linear() = X_curr_0 - Xd_0;
       Delta_X.angular() = -cc::logErrorWorld(Od, O_tool_0_);
 
-      this->publishTargetPose(Xd_0, Rd_0_rotated);
+      this->publishTargetPose(Xd_0, Rd_0.matrix());
 
       // 5. Kinematics & Jacobians (Frame 0)
       cc::Jacobian J = model_.J_tool_0(current.q);

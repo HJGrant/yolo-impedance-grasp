@@ -60,9 +60,10 @@ namespace tum_ics_ur_robot_lli
       cc::LinearPosition pos_meas_B; // Latest point from ROS in 0 frame
       Eigen::Quaterniond target_quat_B_ = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);  //the recieved quaternion from the visual servoing
       Eigen::Quaterniond q_target_B_prev = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
-      cc::Rotation3 O_target_0_; // the orientation target in the 0 frame 
+      Eigen::Matrix3d O_target_0_; // the orientation target in the 0 frame 
       cc::Rotation3 Rd_0;
       cc::Rotation3 Rd_0_rotated;
+      cc::LinearPosition Xd_0;  // the desired linear ćoordinate
 
       // time to last target, and recieved flags
       ros::Time last_target_time_;
