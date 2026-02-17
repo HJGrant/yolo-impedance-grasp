@@ -201,7 +201,7 @@ namespace tum_ics_ur_robot_lli
             std::lock_guard<std::mutex> lock(target_mutex_);
 
             double alpha_pos = 0.2;
-            double alpha_ori = 0.1;
+            double alpha_ori = 0.01;
             
             // --- 1. Filter Linear Position (Frame B) ---
             cc::LinearPosition pos_meas_B(pose_B.pose.position.x, pose_B.pose.position.y, pose_B.pose.position.z);
@@ -231,8 +231,14 @@ namespace tum_ics_ur_robot_lli
             cc::HomogeneousTransformation T_0_B = model_.T_0_B();
             Eigen::Matrix3d R_0_to_B = T_0_B.orientation().matrix();
             Eigen::Matrix3d R_B_to_0 = R_0_to_B.transpose();
-            O_target_0_ = R_B_to_0 * target_quat_B_.toRotationMatrix();
             
+            //turn around the z-axis
+            Eigen::Matrix3d R_local_rot;
+            R_local_rot = Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitZ());
+
+            //O_target_0_ = R_B_to_0 * target_quat_B_.toRotationMatrix();
+            O_target_0_ = R_B_to_0 * (target_quat_B_.toRotationMatrix() * R_local_rot);
+
             // CALCULATE FRAME 0 POSITION HERE
             // (X_0 = R_0_B * X_B + P_0_B)
             X_target_0_ = model_.T_0_B() * X_target_B_;
