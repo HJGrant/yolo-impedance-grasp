@@ -61,6 +61,8 @@ namespace tum_ics_ur_robot_lli
       Eigen::Quaterniond target_quat_B_ = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);  //the recieved quaternion from the visual servoing
       Eigen::Quaterniond q_target_B_prev = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
       cc::Rotation3 O_target_0_; // the orientation target in the 0 frame 
+      cc::Rotation3 Rd_0;
+      cc::Rotation3 Rd_0_rotated;
 
       // time to last target, and recieved flags
       ros::Time last_target_time_;
@@ -79,7 +81,11 @@ namespace tum_ics_ur_robot_lli
       ros::Publisher marker_pub_;
       tf2_ros::Buffer tf_buffer_;  
       tf2_ros::TransformListener tf_listener_{tf_buffer_};
-      tf2_ros::TransformBroadcaster tf_broadcaster_;  
+      tf2_ros::TransformBroadcaster tf_broadcaster_;
+      
+      ros::Publisher target_pose_pub_;
+      void publishTargetPose(const cc::LinearPosition& Xd_0, const cc::Rotation3& R_target_0);
+      void printRotation(const std::string& label, const cc::Rotation3& R);
 
 
     public:

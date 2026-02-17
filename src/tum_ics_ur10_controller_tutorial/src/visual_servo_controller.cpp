@@ -226,7 +226,7 @@ namespace tum_ics_ur_robot_lli
             }
 
             // CALCULATE FRAME 0 TARGET HERE
-            Eigen::Matrix3d R_B_to_0 = model_.T_0_B().rotation().matrix();
+            Eigen::Matrix3d R_B_to_0 = model_.T_0_B().rotation().matrix().transpose();
             O_target_0_ = cc::Rotation3(R_B_to_0 * target_quat_B_.toRotationMatrix());
             
             // CALCULATE FRAME 0 POSITION HERE
@@ -234,6 +234,23 @@ namespace tum_ics_ur_robot_lli
             X_target_0_ = model_.T_0_B() * X_target_B_;
 
             last_target_time_ = ros::Time::now();
+            
+            //publish a transform with the recieved pose
+            last_target_time_ = ros::Time::now();
+            geometry_msgs::TransformStamped transformStamped;
+            transformStamped.header.stamp = ros::Time::now();
+            transformStamped.header.frame_id = "ursa_base_link";  
+            transformStamped.child_frame_id = "target_object";    
+            transformStamped.transform.translation.x = pose_B.pose.position.x;
+            transformStamped.transform.translation.y = pose_B.pose.position.y;
+            transformStamped.transform.translation.z = pose_B.pose.position.z;
+            //transformStamped.transform.rotation = pose_B.pose.orientation;
+            transformStamped.transform.rotation.x = target_quat_B_.x();
+            transformStamped.transform.rotation.y = target_quat_B_.y();
+            transformStamped.transform.rotation.z = target_quat_B_.z();
+            transformStamped.transform.rotation.w = target_quat_B_.w();
+            tf_broadcaster_.sendTransform(transformStamped);
+
 
             // 3. Publish Visualizations immediately in B
             //publishMarker(X_target_B_, 1.0, 0.0, 0.0, 1); // Desired Red
@@ -253,37 +270,11 @@ namespace tum_ics_ur_robot_lli
         startFlag_ = true;
       }
 
-      static bool first_run = false;
-      if (first_run) {
-          cc::HomogeneousTransformation T_init = model_.T_tool_0(current.q);
-          X_hold_0_ = T_init.position();
-          
-          O_hold_0_ = T_init.orientation();
-          
-          first_run = false;
-          ROS_WARN("INTERNAL LATCH: Hard-synced and Normalized.");
-      }
-
       // 2. Fetch Current Robot State (Frame 0)
       cc::HomogeneousTransformation T_tool_0 = model_.T_tool_0(current.q);
       cc::LinearPosition X_curr_0 = T_tool_0.position();
       cc::Rotation3 R_curr_0 = T_tool_0.orientation();
 
-      cc::Rotation3 Rd_0 = cc::Rotation3::Identity();
-      Rd_0 = O_hold_0_;
-      ROS_INFO_STREAM_THROTTLE(2.0, "Rd_0: \n" << Rd_0.matrix());
-      cc::Rotation3 R_diff = R_curr_0.transpose() * Rd_0;
-      ROS_INFO_STREAM_THROTTLE(2.0, "Rotation Offset Matrix: \n" << R_diff.matrix());
-
-      if (std::fmod(time.tD(), 2.0) < 0.002) { 
-          printRotation("CURRENT EE", R_curr_0);
-          printRotation("DESIRED (Rd_0)", Rd_0);
-          
-          // Also print the difference matrix
-          cc::Rotation3 R_diff = R_curr_0.transpose() * Rd_0;
-          printRotation("OFFSET", R_diff);
-      }
-      
       // 3. Thread-Safe Target Acquisition (Frame 0)
       cc::LinearPosition Xd_0;
       bool is_fresh = false;
@@ -294,47 +285,37 @@ namespace tum_ics_ur_robot_lli
         is_fresh = (target_pose_received_ && dt < 0.5);
 
         if (is_fresh) {
-          Xd_0 = X_target_0_; // Position in 0 (calculated in callback)
-          Rd_0 = O_target_0_; // Orientation in 0 (calculated in callback)
+          Xd_0 = X_target_0_.matrix(); // Position in 0 (calculated in callback)
+          Rd_0 = O_target_0_.matrix(); // Orientation in 0 (calculated in callback)
           holding_pos_latched_ = false;
           ROS_INFO_THROTTLE(2.0, "Tracking Active Target.");
         } else {
           // Data lost: Latch position if first time, otherwise use latched values
           if (!holding_pos_latched_) {
-            X_hold_0_ = X_curr_0;
+            X_hold_0_ = X_curr_0.matrix();
             holding_pos_latched_ = true;
             ROS_WARN("Visual Target Lost -> Latching current pose.");
           }
           ROS_INFO_THROTTLE(2.0,"Holding Target.");
-          Xd_0 = X_hold_0_;
-          Rd_0 = O_hold_0_; // Orientation latched during mode switch
+          Xd_0 = X_hold_0_.matrix();
+          Rd_0 = O_hold_0_.matrix();
+
+          Eigen::Matrix3d R_offset = Eigen::AngleAxisd(1.5708, Eigen::Vector3d::UnitY()).toRotationMatrix();
+          Rd_0_rotated = (O_hold_0_.matrix() * R_offset);
         }
       }
 
       // 4. Calculate Cartesian Error (Frame 0)
       cc::CartesianVector Delta_X;
       cc::AngularPosition O_tool_0_ = R_curr_0;
+
+
       cc::AngularPosition Od = Rd_0;
 
       Delta_X.linear() = X_curr_0 - Xd_0;
-      Delta_X.angular() = -cc::logErrorWorld(O_tool_0_, Od);
+      Delta_X.angular() = -cc::logErrorWorld(Od, O_tool_0_);
 
-      this->publishTargetPose(Xd_0, Rd_0);
-
-      static bool last_cartesian_flag = false;
-      if (is_cartesian_flag_ && !last_cartesian_flag) {
-          double lin_err = Delta_X.linear().norm();
-          double ang_err = Delta_X.angular().norm();
-          
-          ROS_WARN_STREAM("!!! SWITCH SYNC CHECK !!!");
-          ROS_WARN_STREAM("Linear Error Magnitude: " << lin_err << " m");
-          ROS_WARN_STREAM("Angular Error Magnitude: " << ang_err << " rad (" << ang_err * 57.29 << " deg)");
-          
-          if (ang_err > 0.1) {
-              ROS_ERROR_STREAM("CRITICAL: Large orientation error at switch! Check Od vs O_tool_0_");
-          }
-      }
-      last_cartesian_flag = is_cartesian_flag_;
+      this->publishTargetPose(Xd_0, Rd_0_rotated);
 
       // 5. Kinematics & Jacobians (Frame 0)
       cc::Jacobian J = model_.J_tool_0(current.q);
@@ -348,8 +329,13 @@ namespace tum_ics_ur_robot_lli
       Vector6d Xrpp = - Kp_ * (Xp - Xdp); 
 
       // 6. Joint Space Reference Generation
-      cc::Jacobian::Inverse J_pinv = J.dampedPinv(0.05, 0.5);
+      cc::Jacobian::Inverse J_pinv = J.dampedPinv(0.15, 1.0);
       Vector6d Qrp = J_pinv * Xrp; 
+
+      if (!Qrp.allFinite()) {
+          ROS_ERROR_THROTTLE(1.0, "Singularity Detected! Qrp contains NaN. Command zeroed.");
+          Qrp.setZero();
+      }
 
       // Velocity Saturation
       double max_vel = 0.5; // rad/s
@@ -443,9 +429,11 @@ namespace tum_ics_ur_robot_lli
           // Latch orientation in Frame 0 (Internal control frame)
           cc::HomogeneousTransformation T_tool_0 = model_.T_tool_0(current.q);
           O_hold_0_ = T_tool_0.orientation();
-          
+
           // Latch position in Frame 0 (Internal control frame)
           X_hold_0_ = T_tool_0.position();
+
+          this->publishTargetPose(X_hold_0_, O_hold_0_);
 
           cc::HomogeneousTransformation T_start_B = model_.T_tool_B(current.q);
           X_target_B_ = T_start_B.position();
@@ -545,11 +533,14 @@ namespace tum_ics_ur_robot_lli
     void VisualServoController::publishTargetPose(const cc::LinearPosition& Xd_0, const cc::Rotation3& R_target_0)
     {
         // 1. Safety Check
-        if (!Xd_0.allFinite() || !R_target_0.matrix().allFinite()) return;
+        if (!Xd_0.allFinite() || !R_target_0.matrix().allFinite()){
+          ROS_ERROR_STREAM("Rotation or Linear Position Not all Finite!");
+          return;
+        }
 
         // 2. Transform from Frame 0 to Frame B
         // X_B = T_B_0 * X_0
-        cc::HomogeneousTransformation T_B_0 = model_.T_0_B().inverse();
+        cc::HomogeneousTransformation T_B_0 = model_.T_0_B();//.inverse();
         cc::LinearPosition X_B = T_B_0 * Xd_0;
         cc::Rotation3 R_B = T_B_0.rotation() * R_target_0;
 
