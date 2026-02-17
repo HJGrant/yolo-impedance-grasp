@@ -24,6 +24,10 @@ RUN printf "\n\
         export ROS_MASTER_URI=http://localhost:11311\n\
         export ROS_IP=127.0.0.1\n\
     }\n" >> /home/devel/.bashrc
+    
+RUN pip install open3d \
+                pyransac3d \
+                --no-cache-dir
 
 # Switch back to the 'devel' user so you aren't root inside the terminal
 USER devel

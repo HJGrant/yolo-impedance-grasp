@@ -8,11 +8,14 @@
 #include <control_core/trajectory/polynomial_trajectories.h>
 
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <mutex>
 //#include <tf/transform_listener.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/Marker.h>
+#include <tf2_ros/transform_broadcaster.h> 
+#include <Eigen/Geometry>  
 
 namespace tum_ics_ur_robot_lli
 {
@@ -47,23 +50,43 @@ namespace tum_ics_ur_robot_lli
 
       Vector6d DeltaQ_;
       Vector6d DeltaQp_;
-
-      ros::Subscriber target_sub_;
-      cc::LinearPosition X_target_pt_; // Latest point from ROS
+      
       std::mutex target_mutex_;        // Thread safety
-      void targetCallback(const geometry_msgs::Point::ConstPtr& msg);
-      bool target_received_;
-      cc::Rotation3 O_lock_;
-      ros::Time last_target_time_;
-      tf2_ros::Buffer tf_buffer_;
-      tf2_ros::TransformListener tf_listener_{tf_buffer_};
-      cc::LinearPosition X_hold_;
-      bool holding_pos_latched_ = false;
-      ros::Publisher marker_pub_;
+      
+      ros::Subscriber target_sub_;
+      void targetCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
+      cc::LinearPosition X_target_B_; // Latest point from ROS in B frame
+      cc::LinearPosition X_target_0_; // Latest point from ROS in 0 frame
+      cc::LinearPosition pos_meas_B; // Latest point from ROS in 0 frame
+      Eigen::Quaterniond target_quat_B_ = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);  //the recieved quaternion from the visual servoing
+      Eigen::Quaterniond q_target_B_prev = Eigen::Quaterniond(1.0, 0.0, 0.0, 0.0);
+      Eigen::Matrix3d O_target_0_; // the orientation target in the 0 frame 
+      cc::Rotation3 Rd_0;
+      cc::Rotation3 Rd_0_rotated;
+      cc::LinearPosition Xd_0;  // the desired linear ćoordinate
 
-      double X_circ;
-      double Y_circ;
-      double PI;
+      // time to last target, and recieved flags
+      ros::Time last_target_time_;
+      bool target_received_ = false;
+      bool target_pose_received_ = false;
+      bool have_q_target_B_prev = false;   
+
+      // needed in the hold state
+      cc::LinearPosition X_hold_0_;
+      cc::Rotation3 O_hold_0_;
+      bool holding_pos_latched_ = false;
+      bool holding_ori_latched_ = false; 
+      bool have_valid_hold_ = false;
+      
+      //visualization and transforms
+      ros::Publisher marker_pub_;
+      tf2_ros::Buffer tf_buffer_;  
+      tf2_ros::TransformListener tf_listener_{tf_buffer_};
+      tf2_ros::TransformBroadcaster tf_broadcaster_;
+      
+      ros::Publisher target_pose_pub_;
+      void publishTargetPose(const cc::LinearPosition& Xd_0, const cc::Rotation3& R_target_0);
+      void printRotation(const std::string& label, const cc::Rotation3& R);
 
 
     public:
