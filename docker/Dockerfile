@@ -14,6 +14,9 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install -U ultralytics --no-cache-dir
 
+RUN pip install open3d \
+                pyransac3d \
+                --no-cache-dir
 
 # Switch back to the 'devel' user so you aren't root inside the terminal
 USER devel

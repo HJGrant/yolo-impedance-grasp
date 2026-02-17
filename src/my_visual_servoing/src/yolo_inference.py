@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 
+#custom imports
+import sys
+import os
+
+script_dir = os.path.dirname(__file__)
+sys.path.append(script_dir)
+
+from utilities.helpers import pca_pose_from_points
+from utilities.pose_estimate import BottlePoseEstimator
+
 import rospy
 import cv2
 import numpy as np
 from cv_bridge import CvBridge
-from vision_msgs.msg import Detection2DArray
 from sensor_msgs.msg import PointCloud2, Image, CameraInfo
-from std_msgs.msg import Float64MultiArray
-from std_msgs.msg import Float32
-from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Point, PoseStamped
 import sensor_msgs.point_cloud2 as pc2
 from std_msgs.msg import Header 
@@ -18,27 +24,29 @@ import torch
 from ultralytics import YOLO
 
 
+
 class YOLOv8:
     def __init__(self, mode):
         rospy.init_node('yolo_node')
         self.bridge = CvBridge()
+
+        # estimate the pose of a bottle from a fitted cylinder
+        self.pose_estimator = BottlePoseEstimator(alpha_pos=0.15, alpha_ori=0.1)
 
         if mode == 'seg':
             self.model = YOLO('yolov8n-seg.pt').to('cuda')
         else:
             self.model = YOLO('yolov8n.pt').to('cuda')
 
+        # Subscribers
         self.sub_rgb = rospy.Subscriber('/camera/rgb/image_rect_color', Image, self.image_data_callback)
         self.sub_depth = rospy.Subscriber('/camera/depth/image_rect_raw', Image, self.depth_map_callback)
         self.cam_info_sub = rospy.Subscriber('/camera/rgb/camera_info', CameraInfo, self.cam_info_cb)
 
-        self.bbox_pub = rospy.Publisher('/object_centroid', Detection2DArray, queue_size=10)
+        # Publishers
         self.debug_pub = rospy.Publisher('/rgb_debug', Image, queue_size=10)
         self.pc_pub = rospy.Publisher('/target_object_cloud', PointCloud2, queue_size=1)
-
-        self.coord_pub = rospy.Publisher('/target_point', Point, queue_size=1)
         self.pose_pub = rospy.Publisher('/target_pose', PoseStamped, queue_size=1)
-
         self.marker_pub = rospy.Publisher('/centroid_marker', Marker, queue_size=1)
 
         self.K = None
@@ -53,103 +61,7 @@ class YOLOv8:
     def cam_info_cb(self, msg):
         self.K = msg.K
         self.cam_info_sub.unregister()
-
-    def rotmat_to_quat_xyzw(self, R):
-        t = np.trace(R)
-        if t > 0.0:
-            S = np.sqrt(t + 1.0) * 2.0
-            qw = 0.25 * S
-            qx = (R[2,1] - R[1,2]) / S
-            qy = (R[0,2] - R[2,0]) / S
-            qz = (R[1,0] - R[0,1]) / S
-        else:
-            if (R[0,0] > R[1,1]) and (R[0,0] > R[2,2]):
-                S = np.sqrt(1.0 + R[0,0] - R[1,1] - R[2,2]) * 2.0
-                qw = (R[2,1] - R[1,2]) / S
-                qx = 0.25 * S
-                qy = (R[0,1] + R[1,0]) / S
-                qz = (R[0,2] + R[2,0]) / S
-            elif R[1,1] > R[2,2]:
-                S = np.sqrt(1.0 + R[1,1] - R[0,0] - R[2,2]) * 2.0
-                qw = (R[0,2] - R[2,0]) / S
-                qx = (R[0,1] + R[1,0]) / S
-                qy = 0.25 * S
-                qz = (R[1,2] + R[2,1]) / S
-            else:
-                S = np.sqrt(1.0 + R[2,2] - R[0,0] - R[1,1]) * 2.0
-                qw = (R[1,0] - R[0,1]) / S
-                qx = (R[0,2] + R[2,0]) / S
-                qy = (R[1,2] + R[2,1]) / S
-                qz = 0.25 * S
-
-        q = np.array([qx, qy, qz, qw], dtype=np.float64)
-        q /= np.linalg.norm(q) + 1e-12
-        return q
     
-    #  if using x_axis up
-    def pca_pose_from_points(self, points, v_prev=None, principal_axis='x'):
-        """
-        Computes pose from PCA.
-        principal_axis: 'x' or 'z' - which axis the main eigenvector aligns with.
-        """
-        if points is None or points.shape[0] < 50:
-            return None, None, None
-
-        c = points.mean(axis=0)
-        Q = points - c
-        C = (Q.T @ Q) / max(points.shape[0], 1)
-
-        # Solve for eigenvectors
-        w, V = np.linalg.eigh(C)
-        v1 = V[:, np.argmax(w)]  # Main principal component
-
-        # Continuity with previous frame
-        if v_prev is not None and np.dot(v1, v_prev) < 0:
-            v1 = -v1
-
-        # Global orientation consistency (keep it pointing generally "up" or "forward")
-        if np.dot(v1, np.array([0.0, 0.0, 1.0])) < 0:
-            v1 = -v1
-
-        # Normalize the principal vector
-        v_main = v1 / (np.linalg.norm(v1) + 1e-12)
-
-        # Reference vector to define the "up" direction for the remaining axes
-        # Typically, we want the y-axis or z-axis to stay as close to global up/down as possible
-        up_ref = np.array([0.0, -1.0, 0.0]) 
-
-        if principal_axis.lower() == 'x':
-            x_axis = v_main
-            # Project up_ref onto the plane orthogonal to x_axis to find z
-            z_axis = up_ref - np.dot(up_ref, x_axis) * x_axis
-            if np.linalg.norm(z_axis) < 1e-6:
-                z_axis = np.array([0.0, 0.0, 1.0]) - np.dot(np.array([0.0, 0.0, 1.0]), x_axis) * x_axis
-            
-            z_axis /= (np.linalg.norm(z_axis) + 1e-12)
-            y_axis = np.cross(z_axis, x_axis)
-            y_axis /= (np.linalg.norm(y_axis) + 1e-12)
-
-        elif principal_axis.lower() == 'z':
-            z_axis = v_main
-            # Project up_ref (or a forward ref) onto the plane orthogonal to z_axis to find x
-            x_ref = np.array([1.0, 0.0, 0.0])
-            x_axis = x_ref - np.dot(x_ref, z_axis) * z_axis
-            if np.linalg.norm(x_axis) < 1e-6:
-                x_axis = np.array([0.0, 1.0, 0.0]) - np.dot(np.array([0.0, 1.0, 0.0]), z_axis) * z_axis
-                
-            x_axis /= (np.linalg.norm(x_axis) + 1e-12)
-            y_axis = np.cross(z_axis, x_axis)
-            y_axis /= (np.linalg.norm(y_axis) + 1e-12)
-        else:
-            raise ValueError("principal_axis must be 'x' or 'z'")
-
-        # Build Rotation Matrix: columns are x, y, z
-        Rm = np.column_stack((x_axis, y_axis, z_axis))
-        
-        quat = self.rotmat_to_quat_xyzw(Rm)
-        return c, quat, v1
-
-
     def image_data_callback(self, msg):
         if self.K is None:
             rospy.logwarn_throttle(5, "Waiting for camera_info to get intrinsic K...")
@@ -199,16 +111,11 @@ class YOLOv8:
             if cloud_msg is None:
                 return
 
-            # Create and publish messages
-            point_msg = Point()
-            point_msg.x = centroid[0]
-            point_msg.y = centroid[1]
-            point_msg.z = centroid[2]
-            self.coord_pub.publish(point_msg)
             self.pc_pub.publish(cloud_msg)
             self.publish_marker(centroid)
 
-            centroid_np, quat_xyzw, v1 = self.pca_pose_from_points(points, v_prev=self.v1_prev)
+            centroid_np, quat_xyzw, v1 = pca_pose_from_points(points, v_prev=self.v1_prev)
+            #centroid_np, quat_xyzw = self.pose_estimator.estimate_pose(points, principal_axis='z')
             if centroid_np is not None:
                 self.v1_prev = v1
 
@@ -227,13 +134,15 @@ class YOLOv8:
 
                 self.pose_pub.publish(pose_msg)
 
+                #cylinder_marker = self.pose_estimator.get_rviz_marker()
+                #self.marker_pub.publish(cylinder_marker)
+
         else:
             # Specific logging to see WHICH one is missing
             if self.current_depth_map is None:
                 rospy.logwarn_throttle(5, "Waiting for depth map on /camera/depth/image_rect_raw...")
             if best_mask is None:
                 rospy.loginfo_throttle(5, f"Target class {target_class_id} not detected in RGB frame.")
-
 
     def get_masked_cloud(self, mask, depth_map):
         # 1. Get indices where mask is True
@@ -301,6 +210,7 @@ class YOLOv8:
         marker.header.stamp = rospy.Time.now()
         marker.type = Marker.SPHERE
         marker.action = Marker.ADD
+        marker.ns = "centroid"
 
         # Set the 3D position
         marker.pose.position.x = centroid[0]

@@ -62,6 +62,7 @@ namespace tum_ics_ur_robot_lli
       is_cartesian_flag_(false),
       is_circular_flag_(true),
       target_received_(false),
+      target_pose_received_(false),
       target_quat_B_(Eigen::Quaterniond::Identity())  
     {
       control_data_pub_ = nh_.advertise<tum_ics_ur_robot_msgs::ControlData>("joint_space_control_data", 1);
@@ -232,8 +233,6 @@ namespace tum_ics_ur_robot_lli
             Eigen::Matrix3d R_B_to_0 = R_0_to_B.transpose();
             O_target_0_ = R_B_to_0 * target_quat_B_.toRotationMatrix();
             
-            ROS_WARN_STREAM_THROTTLE(2.0, "O_target_0_ in callback(): " << O_target_0_.matrix());
-
             // CALCULATE FRAME 0 POSITION HERE
             // (X_0 = R_0_B * X_B + P_0_B)
             X_target_0_ = model_.T_0_B() * X_target_B_;
@@ -300,9 +299,6 @@ namespace tum_ics_ur_robot_lli
           Xd_0 = X_target_0_.matrix(); // Position in 0 (calculated in callback)
           Rd_0 = O_target_0_;//
 
-          ROS_WARN_STREAM_THROTTLE(2.0, "O_target_0_ in update(): " << O_target_0_.matrix());
-          ROS_WARN_STREAM_THROTTLE(2.0, "Rd_0 in update(): " << Rd_0.matrix());
-
           holding_pos_latched_ = false;
           ROS_INFO_THROTTLE(2.0, "Tracking Active Target.");
         } else {
@@ -315,9 +311,6 @@ namespace tum_ics_ur_robot_lli
           ROS_INFO_THROTTLE(2.0,"Holding Target.");
           Xd_0 = X_hold_0_.matrix();
           Rd_0 = O_hold_0_.matrix();
-
-          Eigen::Matrix3d R_offset = Eigen::AngleAxisd(1.5708, Eigen::Vector3d::UnitY()).toRotationMatrix();
-          Rd_0_rotated = (O_hold_0_.matrix() * R_offset);
         }
       }
 
