@@ -120,18 +120,20 @@ class YOLOv8:
             self.publish_marker(centroid)
 
             centroid_np, quat, v1 = pca_pose_from_points(points, v_prev=self.v1_prev, max_tilt_deg=15.0)
+            correction_quat = tft.quaternion_from_euler(3.14159, 0, -1.5708)
+            quat = tft.quaternion_multiply(quat, correction_quat)
+            z_rot_90_neg = tft.quaternion_from_euler(0, 0, -1.5708)
+            quat = tft.quaternion_multiply(quat, z_rot_90_neg)
+
+            #y_flip_quat = tft.quaternion_from_euler(0, 3.14159, 0)
+            #quat = tft.quaternion_multiply(quat, y_flip_quat)
         
             #centroid_np, quat_xyzw = self.pose_estimator.estimate_pose(points, principal_axis='z')
             if centroid_np is not None:
                 self.v1_prev = v1
 
                 if self.eye_in_hand:
-                    correction_quat = tft.quaternion_from_euler(3.14159, 0, -1.5708)
-                    quat = tft.quaternion_multiply(quat_xyzw, correction_quat)
-
-                    y_flip_quat = tft.quaternion_from_euler(0, 3.14159, 0)
-                    quat = tft.quaternion_multiply(quat, y_flip_quat)
-
+                    
                     offset_dist = -0.60
                     T = tft.quaternion_matrix(quat)
                     local_z_axis = T[0:3, 2]
