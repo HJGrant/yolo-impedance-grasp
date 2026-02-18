@@ -8,6 +8,8 @@
   <node name="relay_ursa_to_joint_states" pkg="topic_tools" type="relay"
         args="/ursa_joint_states /joint_states" />
 
+  <node pkg="rosservice" type="rosservice" name="wsg_50_homing" args="call --wait /wsg_50_driver/homing" />
+
   <!-- the controller -->
   <node name="visual_servo_controller" pkg="tum_ics_ur10_controller_tutorial" type="visual_servo_controller_node" args="$(arg CONFIG_FILE_PATH)" output="screen">
 

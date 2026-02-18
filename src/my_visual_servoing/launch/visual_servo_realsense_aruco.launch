@@ -18,7 +18,7 @@
   </group>
 
   <node pkg="tf2_ros" type="static_transform_publisher" name="marker_to_base" 
-        args="0.05 0.125 -0.165 0.0 1.5708 -1.5708 ursa_base_link physical_marker_frame" />
+        args="0.05 0.13 -0.165 0.0 1.5708 -1.5708 ursa_base_link physical_marker_frame" />
 
   <arg name="calibrate" default="true" />
   <arg name="markerId"   default="44"/>          

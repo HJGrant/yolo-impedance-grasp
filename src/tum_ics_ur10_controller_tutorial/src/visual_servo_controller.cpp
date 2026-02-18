@@ -370,13 +370,20 @@ namespace tum_ics_ur_robot_lli
           case RoutineState::TRACK: {
             if (is_fresh) {
               Xd_0 = X_target_0_.matrix();
+              // Xd_0 = X_target_0_
               Rd_0 = O_target_0_;
+
+              Eigen::Vector3d offset_obj(0.30, -0.14, -0.3);         
+              Eigen::Vector3d offset_0 = Rd_0.matrix() * offset_obj; 
+
+              Xd_0 = (Xd_0 + offset_0).matrix();
               holding_pos_latched_ = false;
 
               // Still detector runs only when we have a valid vision target
               if (updateStillDetector(dt_wall)) {
                 // Lock current target for grasp routine
-                X_locked_0_ = X_target_0_.matrix();
+                //X_locked_0_ = X_target_0_.matrix();
+                X_locked_0_ = Xd_0.matrix();
                 // R_locked_0_ = cc::Rotation3(O_target_0_);
                 R_locked_0_ = R_curr_0.matrix();
                 // R_ee_locked_0_ = R_curr_0.matrix();
@@ -414,11 +421,16 @@ namespace tum_ics_ur_robot_lli
             // R_ee_locked_0_ = R_curr_0.matrix();;
             // ROS_WARN_STREAM("R_curr_0 at lock:\n" << R_curr_0.matrix());
             // ROS_WARN_STREAM("R_ee_locked_0 after lock:\n" << R_ee_locked_0_.matrix());
-            computeLockedDesired(pregrasp_offset_m_, Xd_0, Rd_0);
+            // computeLockedDesired(pregrasp_offset_m_, Xd_0, Rd_0);
+            Rd_0 = R_locked_0_.matrix();
+            Xd_0 = X_locked_0_.matrix();
+            Eigen::Vector3d offset_obj(0.0, 0.0, 0.30);         
+            Eigen::Vector3d offset_0 = Rd_0.matrix() * offset_obj; 
+            Xd_0 = (Xd_0 + offset_0).matrix();
             if (isReached(X_curr_0, R_curr_0, Xd_0, Rd_0)) {
               X_ee_locked_0_ = X_curr_0.matrix();
               R_ee_locked_0_ = R_curr_0.matrix();
-              routine_state_ = RoutineState::GRASP_POSE;
+              routine_state_ = RoutineState::GRASP_CLOSE;
               ROS_WARN("PREGRASP reached -> GRASP_POSE.");
             }
             break;
@@ -430,7 +442,12 @@ namespace tum_ics_ur_robot_lli
               resetStillDetectorLocked();
               break;
             }
-            computeLockedDesired(grasp_offset_m_, Xd_0, Rd_0);
+            // computeLockedDesired(grasp_offset_m_, Xd_0, Rd_0);
+            Rd_0 = R_locked_0_.matrix();
+            Xd_0 = X_locked_0_.matrix();
+            Eigen::Vector3d offset_obj(0.0, -0.3, -0.2);         
+            Eigen::Vector3d offset_0 = Rd_0.matrix() * offset_obj; 
+            Xd_0 = (Xd_0 + offset_0).matrix();
             if (isReached(X_curr_0, R_curr_0, Xd_0, Rd_0)) {
               routine_state_ = RoutineState::GRASP_CLOSE;
               ROS_WARN("GRASP_POSE reached -> GRASP_CLOSE (call gripper).");
@@ -440,12 +457,19 @@ namespace tum_ics_ur_robot_lli
 
           case RoutineState::GRASP_CLOSE: {
             // Hold the grasp pose while closing
-            computeLockedDesired(grasp_offset_m_, Xd_0, Rd_0);
+            //computeLockedDesired(grasp_offset_m_, Xd_0, Rd_0);
+
+            Rd_0 = R_locked_0_.matrix();
+            Xd_0 = X_locked_0_.matrix();
+            Eigen::Vector3d offset_obj(0.0, 0.0, 0.30);         
+            Eigen::Vector3d offset_0 = Rd_0.matrix() * offset_obj; 
+            Xd_0 = (Xd_0 + offset_0).matrix();
 
             if (!gripper_busy_ && !gripper_done_) {
               // WSG-50 grasp service (from your gripper document)
               // width: 0.0 (close), speed: 50.0
-              startGripperCommand("rosservice call /wsg_50_driver/grasp \"width: 0.0 speed: 50.0\"");
+              // startGripperCommand("rosservice call /wsg_50_driver/grasp \"width: 0.0 speed: 50.0\"");
+              startGripperCommand("rosservice call /wsg_50_driver/move \"{width: 67.5, speed: 20.0}\"");
               ROS_WARN("Calling gripper grasp service...");
             }
 
@@ -467,7 +491,7 @@ namespace tum_ics_ur_robot_lli
             Xd_0 = X_place_0_.matrix();
             Rd_0 = R_place_0_.matrix();
             if (isReached(X_curr_0, R_curr_0, Xd_0, Rd_0)) {
-              routine_state_ = RoutineState::RELEASE_OPEN;
+              routine_state_ = RoutineState::FINISHED;
               gripper_done_ = false;
               gripper_busy_ = false;
               gripper_ret_ = 0;
@@ -489,8 +513,8 @@ namespace tum_ics_ur_robot_lli
 
             if (gripper_done_) {
               if (gripper_ret_ == 0) {
-                routine_state_ = RoutineState::DONE;
-                ROS_WARN("Release done -> DONE.");
+                routine_state_ = RoutineState::FINISHED;
+                ROS_WARN("Release done -> FINISHED.");
               } else {
                 ROS_ERROR("Gripper release failed (ret=%d). Returning to TRACK.", (int)gripper_ret_.load());
                 routine_state_ = RoutineState::TRACK;
@@ -508,6 +532,16 @@ namespace tum_ics_ur_robot_lli
             // keep Xd_0/Rd_0 as last values this cycle
             break;
           }
+
+          case RoutineState::FINISHED: {
+            setDefaultPlacePoseIfNeeded();
+            Xd_0 = X_place_0_.matrix();
+            Rd_0 = R_place_0_.matrix();
+
+            // Do NOT go back to TRACK
+
+            break;
+          }
         }
       }
 
@@ -517,6 +551,7 @@ namespace tum_ics_ur_robot_lli
 
       cc::AngularPosition Od = Rd_0.matrix();
 
+      // Xd_0.y() += 0.5; 
       Delta_X.linear() = X_curr_0 - Xd_0;
       Delta_X.angular() = -cc::logErrorWorld(Od, O_tool_0_);
 
@@ -543,7 +578,7 @@ namespace tum_ics_ur_robot_lli
       }
 
       // Velocity Saturation
-      double max_vel = 0.5; // rad/s
+      double max_vel = 0.2; // rad/s
       double max_val = Qrp.lpNorm<Eigen::Infinity>();
       if (max_val > max_vel) Qrp *= (max_vel / max_val);
 
@@ -890,17 +925,17 @@ namespace tum_ics_ur_robot_lli
       gripper_done_ = false;
       gripper_ret_ = -1;
 
-      // gripper_thread_ = std::thread([this, cmd]() {
-      //   int ret = std::system(cmd.c_str());
-      //   gripper_ret_ = ret;
-      //   gripper_done_ = true;
-      //   gripper_busy_ = false;
-      // });
-        std::this_thread::sleep_for(std::chrono::seconds(10));
-        ROS_WARN("Gripper Reached.");
-        gripper_ret_ = 0;
+      gripper_thread_ = std::thread([this, cmd]() {
+        int ret = std::system(cmd.c_str());
+        gripper_ret_ = ret;
         gripper_done_ = true;
         gripper_busy_ = false;
+      });
+      std::this_thread::sleep_for(std::chrono::seconds(3));
+        // ROS_WARN("Gripper Reached.");
+        // gripper_ret_ = 0;
+        // gripper_done_ = true;
+        // gripper_busy_ = false;
 
     }
 
@@ -943,7 +978,7 @@ namespace tum_ics_ur_robot_lli
       // If you don't, this default will be used.
       if (have_valid_hold_) {
         X_place_0_ = X_ee_locked_0_.matrix();
-        X_place_0_.z() += 0.5;
+        X_place_0_.z() += 0.15;
         R_place_0_ = R_ee_locked_0_.matrix();
       } else {
         X_place_0_ = X_ee_locked_0_.matrix();
