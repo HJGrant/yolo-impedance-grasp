@@ -19,6 +19,7 @@ from geometry_msgs.msg import Point, PoseStamped
 import sensor_msgs.point_cloud2 as pc2
 from std_msgs.msg import Header 
 from visualization_msgs.msg import Marker
+import tf.transformations as tft
 
 import torch
 from ultralytics import YOLO
@@ -53,6 +54,10 @@ class YOLOv8:
         self.current_depth_map = None
 
         self.v1_prev = None
+        self.eye_in_hand = False
+        self.filtered_pos = None
+        self.filtered_quat = None
+        self.alpha = 0.1
 
     def depth_map_callback(self, msg):
         cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
@@ -114,10 +119,36 @@ class YOLOv8:
             self.pc_pub.publish(cloud_msg)
             self.publish_marker(centroid)
 
-            centroid_np, quat_xyzw, v1 = pca_pose_from_points(points, v_prev=self.v1_prev)
+            centroid_np, quat, v1 = pca_pose_from_points(points, v_prev=self.v1_prev, max_tilt_deg=15.0)
+        
             #centroid_np, quat_xyzw = self.pose_estimator.estimate_pose(points, principal_axis='z')
             if centroid_np is not None:
                 self.v1_prev = v1
+
+                if self.eye_in_hand:
+                    correction_quat = tft.quaternion_from_euler(3.14159, 0, -1.5708)
+                    quat = tft.quaternion_multiply(quat_xyzw, correction_quat)
+
+                    y_flip_quat = tft.quaternion_from_euler(0, 3.14159, 0)
+                    quat = tft.quaternion_multiply(quat, y_flip_quat)
+
+                    offset_dist = -0.60
+                    T = tft.quaternion_matrix(quat)
+                    local_z_axis = T[0:3, 2]
+                    centroid_np = centroid_np + (local_z_axis * offset_dist)
+
+                if self.filtered_pos is None:
+                    self.filtered_pos = centroid_np
+                    self.filtered_quat = quat
+                else:
+                    # Smooth Position
+                    self.filtered_pos = (1 - self.alpha) * self.filtered_pos + self.alpha * centroid_np
+                    
+                    # Smooth Orientation (Hemisphere check to avoid long-way-round rotation)
+                    if np.dot(self.filtered_quat, quat) < 0:
+                        quat = -quat
+                    self.filtered_quat = (1 - self.alpha) * self.filtered_quat + self.alpha * quat
+                    self.filtered_quat /= np.linalg.norm(self.filtered_quat)
 
                 pose_msg = PoseStamped()
                 pose_msg.header.stamp = rospy.Time.now()
@@ -127,10 +158,10 @@ class YOLOv8:
                 pose_msg.pose.position.y = float(centroid_np[1])
                 pose_msg.pose.position.z = float(centroid_np[2])
 
-                pose_msg.pose.orientation.x = float(quat_xyzw[0])
-                pose_msg.pose.orientation.y = float(quat_xyzw[1])
-                pose_msg.pose.orientation.z = float(quat_xyzw[2])
-                pose_msg.pose.orientation.w = float(quat_xyzw[3])
+                pose_msg.pose.orientation.x = float(self.filtered_quat[0])
+                pose_msg.pose.orientation.y = float(self.filtered_quat[1])
+                pose_msg.pose.orientation.z = float(self.filtered_quat[2])
+                pose_msg.pose.orientation.w = float(self.filtered_quat[3])
 
                 self.pose_pub.publish(pose_msg)
 
