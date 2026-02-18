@@ -1,0 +1,53 @@
+<launch>
+  <node pkg="my_visual_servoing" type="yolo_inference.py" name="object_centroid_pub" output="screen">
+      <remap from="/camera/rgb/image_rect_color" to="/camera/color/image_rect_color" />
+      <remap from="/camera/depth/image_rect_raw" to="/camera/aligned_depth_to_color/image_raw" />
+      <remap from="/camera/rgb/camera_info" to="/camera/color/camera_info" />
+  </node>
+
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+      <arg name="enable_pointcloud" value="false" />
+      <arg name="align_depth"      value="true" />
+      <arg name="color_width"      value="640" />
+      <arg name="color_height"     value="480" />
+      <arg name="color_fps"        value="30" />
+  </include>
+
+  <group ns="camera/color">
+    <node pkg="image_proc" type="image_proc" name="image_proc_node" output="screen"> </node>
+  </group>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="marker_to_base" 
+        args="0.05 0.125 -0.165 0.0 1.5708 -1.5708 ursa_base_link physical_marker_frame" />
+
+  <arg name="calibrate" default="true" />
+  <arg name="markerId"   default="44"/>          
+  <arg name="markerSize" default="0.1897"/> 
+  <group if="$(arg calibrate)">
+    <node pkg="aruco_ros" type="single" name="aruco_single">
+      <remap from="/camera_info" to="/camera/color/camera_info" />
+      
+      <remap from="/image" to="/camera/color/image_rect_color" />
+      
+      <param name="marker_id"          value="$(arg markerId)"/>
+      <param name="marker_size"        value="$(arg markerSize)"/>
+      <param name="image_is_rectified" value="True"/>
+
+      <param name="camera_frame"       value="camera_color_optical_frame"/>
+      
+      <param name="reference_frame"    value="camera_color_optical_frame"/> 
+      
+      <param name="marker_frame"       value="detected_marker_frame" /> 
+    </node>
+  </group>
+
+  <node pkg="my_visual_servoing" type="auto_calibrate_pose.py" name="camera_lock" output="screen">
+      <param name="use_saved" value="$(eval not arg('calibrate'))"/>
+      <param name="samples" value="100"/>
+      <param name="base_frame" value="ursa_base_link"/>
+      <param name="camera_frame" value="camera_link"/>
+      <param name="color_optical_frame" value="camera_color_optical_frame"/>  
+      <param name="fixed_marker_frame" value="physical_marker_frame"/> 
+  </node>
+
+</launch>

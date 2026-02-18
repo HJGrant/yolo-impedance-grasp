@@ -49,11 +49,15 @@ class YOLOv8:
         self.pc_pub = rospy.Publisher('/target_object_cloud', PointCloud2, queue_size=1)
         self.pose_pub = rospy.Publisher('/target_pose', PoseStamped, queue_size=1)
         self.marker_pub = rospy.Publisher('/centroid_marker', Marker, queue_size=1)
+        self.frame_id = "camera_color_optical_frame"
 
         self.K = None
         self.current_depth_map = None
 
         self.v1_prev = None
+        self.filtered_pos = None
+        self.filtered_quat = None
+        self.alpha = 0.1
 
     def depth_map_callback(self, msg):
         cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
@@ -115,28 +119,42 @@ class YOLOv8:
             self.pc_pub.publish(cloud_msg)
             self.publish_marker(centroid)
 
-            centroid_np, quat, v1 = pca_pose_from_points(points, v_prev=self.v1_prev)
+            centroid_np, quat, v1 = pca_pose_from_points(points, v_prev=self.v1_prev, max_tilt_deg=60.0)
             correction_quat = tft.quaternion_from_euler(3.14159, 0, -1.5708)
             quat = tft.quaternion_multiply(quat, correction_quat)
-            z_rot_90_neg = tft.quaternion_from_euler(0, 0, 1.5708)
+            z_rot_90_neg = tft.quaternion_from_euler(0, 0, -1.5708)
             quat = tft.quaternion_multiply(quat, z_rot_90_neg)
 
             #centroid_np, quat_xyzw = self.pose_estimator.estimate_pose(points, principal_axis='z')
             if centroid_np is not None:
                 self.v1_prev = v1
 
+                if self.filtered_pos is None:
+                    self.filtered_pos = centroid_np
+                    self.filtered_quat = quat
+                else:
+                    # Smooth Position
+                    self.filtered_pos = (1 - self.alpha) * self.filtered_pos + self.alpha * centroid_np
+                    
+                    # Smooth Orientation (Hemisphere check to avoid long-way-round rotation)
+                    if np.dot(self.filtered_quat, quat) < 0:
+                        quat = -quat
+                    self.filtered_quat = (1 - self.alpha) * self.filtered_quat + self.alpha * quat
+                    self.filtered_quat /= np.linalg.norm(self.filtered_quat)
+
                 pose_msg = PoseStamped()
                 pose_msg.header.stamp = rospy.Time.now()
-                pose_msg.header.frame_id = "camera_rgb_optical_frame"
+                pose_msg.header.frame_id = self.frame_id
 
                 pose_msg.pose.position.x = float(centroid_np[0])
                 pose_msg.pose.position.y = float(centroid_np[1])
                 pose_msg.pose.position.z = float(centroid_np[2])
 
-                pose_msg.pose.orientation.x = float(quat[0])
-                pose_msg.pose.orientation.y = float(quat[1])
-                pose_msg.pose.orientation.z = float(quat[2])
-                pose_msg.pose.orientation.w = float(quat[3])
+                # TODO: change this back to the filtered quat once you verified that stuff works
+                pose_msg.pose.orientation.x = float(self.filtered_quat[0])
+                pose_msg.pose.orientation.y = float(self.filtered_quat[1])
+                pose_msg.pose.orientation.z = float(self.filtered_quat[2])
+                pose_msg.pose.orientation.w = float(self.filtered_quat[3])
 
                 self.pose_pub.publish(pose_msg)
 
@@ -181,14 +199,14 @@ class YOLOv8:
             rospy.logwarn("Points Outside of Threshold!")
             return None, None, None
 
-        workspace_mask = (z > 0.1) & (z < 1.5)
-        z = z[workspace_mask]
-        u = u[workspace_mask]
-        v = v[workspace_mask]
+        #workspace_mask = (z > 0.1) & (z < 1.5)
+        #z = z[workspace_mask]
+        #u = u[workspace_mask]
+        #v = v[workspace_mask]
 
-        if len(z) == 0:
-            rospy.logwarn("Points Outside of Workspace!")
-            return None, None, None
+        #if len(z) == 0:
+        #    rospy.logwarn("Points Outside of Workspace!")
+        #    return None, None, None
 
         # 3. Project to 3D using pinhole camera equations
         fx, cx = self.K[0], self.K[2]
@@ -204,7 +222,7 @@ class YOLOv8:
         points = np.vstack((x, y, z)).T
         header = Header()
         header.stamp = rospy.Time.now()
-        header.frame_id = "camera_rgb_optical_frame" # Adjust to your frame
+        header.frame_id = self.frame_id # Adjust to your frame
 
         cloud_msg = pc2.create_cloud_xyz32(header, points)
 
@@ -212,7 +230,7 @@ class YOLOv8:
 
     def publish_marker(self, centroid):
         marker = Marker()
-        marker.header.frame_id = "camera_rgb_optical_frame" # Must match your cloud frame
+        marker.header.frame_id = self.frame_id # Must match your cloud frame
         marker.header.stamp = rospy.Time.now()
         marker.type = Marker.SPHERE
         marker.action = Marker.ADD

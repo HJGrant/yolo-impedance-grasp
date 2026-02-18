@@ -10,6 +10,8 @@ USER root
 RUN apt-get update && apt-get install -y \
     ros-$ROS_DISTRO-vision-msgs \
     ros-$ROS_DISTRO-realsense2-camera \
+    ros-$ROS_DISTRO-rgbd-launch \
+    ros-$ROS_DISTRO-aruco-ros \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install -U ultralytics --no-cache-dir

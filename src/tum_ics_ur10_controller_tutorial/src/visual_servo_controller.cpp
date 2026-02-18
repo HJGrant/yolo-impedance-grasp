@@ -241,7 +241,7 @@ namespace tum_ics_ur_robot_lli
     void VisualServoController::targetCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
     {
         geometry_msgs::PoseStamped pose_in, pose_B;
-        pose_in.header.frame_id = "camera_rgb_optical_frame";
+        pose_in.header.frame_id = "camera_color_optical_frame";
         pose_in.header.stamp = ros::Time(0);
         pose_in.pose = msg->pose;
 
@@ -253,7 +253,6 @@ namespace tum_ics_ur_robot_lli
 
             double alpha_pos = 0.2;
             double alpha_ori = 0.01;
-
             // --- 1. Filter Linear Position (Frame B) ---
             cc::LinearPosition pos_meas_B(pose_B.pose.position.x, pose_B.pose.position.y, pose_B.pose.position.z);
             if (!target_received_) {

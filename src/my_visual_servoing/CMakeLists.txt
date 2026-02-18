@@ -166,6 +166,12 @@ catkin_install_python(PROGRAMS
   src/yolo_inference.py  # <-- Change this to your actual filename
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+catkin_install_python(PROGRAMS
+  src/auto_calibrate_pose.py  # <-- Change this to your actual filename
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 # install(TARGETS ${PROJECT_NAME}_node
