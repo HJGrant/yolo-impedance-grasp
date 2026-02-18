@@ -452,7 +452,8 @@ namespace tum_ics_ur_robot_lli
             if (!gripper_busy_ && !gripper_done_) {
               // WSG-50 grasp service (from your gripper document)
               // width: 0.0 (close), speed: 50.0
-              startGripperCommand("rosservice call /wsg_50_driver/grasp \"width: 0.0 speed: 50.0\"");
+              // startGripperCommand("rosservice call /wsg_50_driver/grasp \"width: 0.0 speed: 50.0\"");
+              startGripperCommand("rosservice call /wsg_50_driver/move \"{width: 67.5.0 speed: 20.0}\"");
               ROS_WARN("Calling gripper grasp service...");
             }
 
@@ -908,17 +909,17 @@ namespace tum_ics_ur_robot_lli
       gripper_done_ = false;
       gripper_ret_ = -1;
 
-      // gripper_thread_ = std::thread([this, cmd]() {
-      //   int ret = std::system(cmd.c_str());
-      //   gripper_ret_ = ret;
-      //   gripper_done_ = true;
-      //   gripper_busy_ = false;
-      // });
-        std::this_thread::sleep_for(std::chrono::seconds(10));
-        ROS_WARN("Gripper Reached.");
-        gripper_ret_ = 0;
+      gripper_thread_ = std::thread([this, cmd]() {
+        int ret = std::system(cmd.c_str());
+        gripper_ret_ = ret;
         gripper_done_ = true;
         gripper_busy_ = false;
+      });
+        // std::this_thread::sleep_for(std::chrono::seconds(10));
+        // ROS_WARN("Gripper Reached.");
+        // gripper_ret_ = 0;
+        // gripper_done_ = true;
+        // gripper_busy_ = false;
 
     }
 
