@@ -371,7 +371,13 @@ namespace tum_ics_ur_robot_lli
           case RoutineState::TRACK: {
             if (is_fresh) {
               Xd_0 = X_target_0_.matrix();
+              // Xd_0 = X_target_0_
               Rd_0 = O_target_0_;
+
+              Eigen::Vector3d offset_obj(0.0, 0.0, -0.3);         
+              Eigen::Vector3d offset_0 = Rd_0.matrix() * offset_obj; 
+
+              Xd_0 = (Xd_0 + offset_0).matrix();
               holding_pos_latched_ = false;
 
               // Still detector runs only when we have a valid vision target
@@ -468,7 +474,7 @@ namespace tum_ics_ur_robot_lli
             Xd_0 = X_place_0_.matrix();
             Rd_0 = R_place_0_.matrix();
             if (isReached(X_curr_0, R_curr_0, Xd_0, Rd_0)) {
-              routine_state_ = RoutineState::RELEASE_OPEN;
+              routine_state_ = RoutineState::FINISHED;
               gripper_done_ = false;
               gripper_busy_ = false;
               gripper_ret_ = 0;
@@ -490,8 +496,8 @@ namespace tum_ics_ur_robot_lli
 
             if (gripper_done_) {
               if (gripper_ret_ == 0) {
-                routine_state_ = RoutineState::DONE;
-                ROS_WARN("Release done -> DONE.");
+                routine_state_ = RoutineState::FINISHED;
+                ROS_WARN("Release done -> FINISHED.");
               } else {
                 ROS_ERROR("Gripper release failed (ret=%d). Returning to TRACK.", (int)gripper_ret_.load());
                 routine_state_ = RoutineState::TRACK;
@@ -509,6 +515,16 @@ namespace tum_ics_ur_robot_lli
             // keep Xd_0/Rd_0 as last values this cycle
             break;
           }
+
+          case RoutineState::FINISHED: {
+            setDefaultPlacePoseIfNeeded();
+            Xd_0 = X_place_0_.matrix();
+            Rd_0 = R_place_0_.matrix();
+
+            // Do NOT go back to TRACK
+
+            break;
+          }
         }
       }
 
@@ -518,6 +534,7 @@ namespace tum_ics_ur_robot_lli
 
       cc::AngularPosition Od = Rd_0.matrix();
 
+      // Xd_0.y() += 0.5; 
       Delta_X.linear() = X_curr_0 - Xd_0;
       Delta_X.angular() = -cc::logErrorWorld(Od, O_tool_0_);
 
@@ -544,7 +561,7 @@ namespace tum_ics_ur_robot_lli
       }
 
       // Velocity Saturation
-      double max_vel = 0.5; // rad/s
+      double max_vel = 0.2; // rad/s
       double max_val = Qrp.lpNorm<Eigen::Infinity>();
       if (max_val > max_vel) Qrp *= (max_vel / max_val);
 

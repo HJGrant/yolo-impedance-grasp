@@ -116,10 +116,11 @@ class YOLOv8:
             self.publish_marker(centroid)
 
             centroid_np, quat, v1 = pca_pose_from_points(points, v_prev=self.v1_prev)
-            correction_quat = tft.quaternion_from_euler(3.14159, 0, -1.5708)
+            # correction_quat = tft.quaternion_from_euler(3.14159, 0, -1.5708)
+            correction_quat = tft.quaternion_from_euler(0, 0, 0)
             quat = tft.quaternion_multiply(quat, correction_quat)
-            z_rot_90_neg = tft.quaternion_from_euler(0, 0, 1.5708)
-            quat = tft.quaternion_multiply(quat, z_rot_90_neg)
+            # z_rot_90_neg = tft.quaternion_from_euler(0, 0, 1.5708)
+            # quat = tft.quaternion_multiply(quat, z_rot_90_neg)
 
             #centroid_np, quat_xyzw = self.pose_estimator.estimate_pose(points, principal_axis='z')
             if centroid_np is not None:

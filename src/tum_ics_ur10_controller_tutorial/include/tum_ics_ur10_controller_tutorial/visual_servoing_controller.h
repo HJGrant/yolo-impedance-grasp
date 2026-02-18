@@ -36,7 +36,8 @@ namespace tum_ics_ur_robot_lli
         GRASP_CLOSE,      // call gripper grasp service
         MOVE_TO_PLACE,    // move to place pose
         RELEASE_OPEN,     // call gripper release service
-        DONE
+        DONE,
+        FINISHED
       };
 
       ur::URModel model_; // Declare object "model"
@@ -113,7 +114,7 @@ namespace tum_ics_ur_robot_lli
       bool locked_valid_{false};
 
       // Pregrasp / grasp offsets (in object frame; applied using locked rotation)
-      double pregrasp_offset_m_{0.15};          // 10cm standoff
+      double pregrasp_offset_m_{0.1};          // 10cm standoff
       double grasp_offset_m_{0.00};             // contact/center
 
       // Place pose (frame 0). You can override via params.
