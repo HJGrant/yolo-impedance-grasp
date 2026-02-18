@@ -3,7 +3,8 @@
       </node>
 
   <node pkg="tf2_ros" type="static_transform_publisher" name="base_to_camera" 
-      args="1.5 0.0 0.7 3.14159 0 0 ursa_base_link camera_link" />
+        args="-0.2 1.8 0.1 -1.5708 0.0 0.0 ursa_base_link camera_link" />
+
 
   <node pkg="tf2_ros" type="static_transform_publisher" name="camera_to_optical" 
         args="0 0 0 -1.5708 0 -1.5708 camera_link camera_rgb_optical_frame" />

@@ -239,3 +239,8 @@ qtcreator-*
 CATKIN_IGNORE
 
 # End of https://www.toptal.com/developers/gitignore/api/python,ros,linux
+# catkin tools / build artifacts
+.catkin_tools/
+build/
+devel/
+logs/

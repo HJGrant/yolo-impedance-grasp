@@ -19,5 +19,7 @@ visual_servo_controller:
  #goal: [0, -45, 90, -135, 90, -90]
 
  #goal of joint space controller
- goal: [0, -90, 90, 0, 90, 0]
+#  goal: [0, -90, 90, 0, 90, 0]
+ goal: [93, -45, 97, -54, 90, 0]
+
  time: 10.0
