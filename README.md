@@ -10,7 +10,17 @@
 **Multi-sensory Based Robot Dynamic Manipulation** final project – *Visual Servo Tracking and Picking of Unknown Objects.*
 
 ## 📝 Description
-Control your UR10 to dynamically track desired objects with YOLOv8 in real-time and pick them up. 🎯🦾
+Real-time visual servoing and grasping of unknown objects on a torque-controlled UR10. Learned perception (YOLOv8) feeds a model-based adaptive controller, running closed-loop on real hardware. 🎯🦾
+
+- 👁️ **Learned perception:** YOLOv8 instance segmentation on RealSense RGB-D frames turns the target's mask into a 3D point cloud, with median-based depth filtering to reject background points.
+- 📐 **6-DoF pose estimation:** PCA on the segmented point cloud gives the object's position and principal axis, smoothed with an exponential filter for position and slerp for orientation.
+- 📷 **Camera-to-robot calibration:** the camera pose is estimated automatically by averaging 100 detections of an ArUco marker fixed to the robot base.
+- 🧠 **Adaptive model-based control:** a Slotine-Li adaptive controller in Cartesian space uses the UR10 dynamics regressor and adapts the robot's dynamic parameters online, with torque control at 500 Hz.
+- 🛡️ **Robust tracking:** a damped pseudoinverse handles singularities, joint velocities are capped, and the robot holds its last pose if the target is lost.
+- 🤏 **Autonomous grasping:** once the object has been still for 10 s, a state machine moves to a pre-grasp pose and closes the WSG-50 gripper.
+- 🐳 **Reproducible setup:** everything runs inside a Docker dev container on ROS Noetic.
+
+👥 Developed by Hamish Grant and Leo [surname] as the final project for *Multi-sensory Based Robot Dynamic Manipulation* at TUM.
 
 ## 🎬 Demo Video
 
